@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<style>
+  body{margin:0;background:#f4efe9;font-family:Arial,Helvetica,sans-serif}
+  a{color:oklch(0.6 0.15 35);text-decoration:none}
+  a:hover{color:oklch(0.52 0.17 35)}
+  ::-webkit-scrollbar{width:0;height:0}
+  input{font-family:Arial,Helvetica,sans-serif}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:48px;background:linear-gradient(135deg, oklch(0.86 0.05 55), oklch(0.82 0.06 30) 45%, oklch(0.8 0.05 340));display:flex;justify-content:center">
+<div style="width:1180px;flex-shrink:0;background:#fdfbf9;border-radius:28px;box-shadow:0 30px 60px -20px rgba(60,30,10,0.25);padding:32px;display:grid;grid-template-columns:250px 1fr;gap:28px">
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding-top:12px">
+      <div style="width:76px;height:76px;border-radius:50%;background:conic-gradient(from 90deg, oklch(0.7 0.18 30), oklch(0.75 0.15 90), oklch(0.68 0.16 340), oklch(0.7 0.18 30));display:flex;align-items:center;justify-content:center;padding:3px">
+        <div style="width:100%;height:100%;border-radius:50%;background:#e8ddd2;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;color:oklch(0.4 0.05 40)">MK</div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:16px;color:oklch(0.25 0.02 40)">Mira Kondo</div>
+        <div style="font-size:13px;color:oklch(0.5 0.02 40)">@mira.laughs</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div onClick="{{ goFeed }}" style="{{ navFeed }}"><span style="display:flex;align-items:center;gap:10px">🙂 Feed</span></div>
+      <div onClick="{{ goVines }}" style="{{ navVines }}"><span style="display:flex;align-items:center;gap:10px">🎬 Vines</span></div>
+      <div onClick="{{ goMsg }}" style="{{ navMsg }}"><span style="display:flex;align-items:center;gap:10px">💬 Messages</span><span style="background:oklch(0.62 0.19 35);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px">6</span></div>
+      <div onClick="{{ goFriends }}" style="{{ navFriends }}"><span style="display:flex;align-items:center;gap:10px">👥 Friends</span><span style="background:oklch(0.92 0.02 60);color:oklch(0.3 0.02 40);font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px">3</span></div>
+      <div onClick="{{ goProfile }}" style="{{ navProfile }}"><span style="display:flex;align-items:center;gap:10px">👤 Profile</span></div>
+      <div onClick="{{ goSettings }}" style="{{ navSettings }}"><span style="display:flex;align-items:center;gap:10px">⚙️ Settings</span></div>
+      
+    </div>
+
+    
+  </div>
+
+  <div style="min-width:0">
+
+    <sc-if value="{{ isFeed }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:1fr 250px;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Feed</div>
+          <div style="display:flex;gap:22px;font-size:14px"><span style="color:oklch(0.5 0.02 40)">Recent</span><span style="color:oklch(0.25 0.02 40);font-weight:700">Friends</span><span style="color:oklch(0.5 0.02 40)">Popular</span></div>
+        </div>
+        <div style="background:oklch(0.95 0.025 250);border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px;align-items:center"><div style="width:42px;height:42px;border-radius:50%;background:oklch(0.72 0.14 250);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">GT</div><div><div style="font-weight:700;font-size:14px;color:oklch(0.22 0.02 40)">Gio Tremaine</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">2 hours ago</div></div></div>
+          <div style="font-size:14px;line-height:1.55;color:oklch(0.3 0.02 40)">Just found out my dog has been "walking himself" via the neighbor's automatic door 😭 mans has a whole social life. Shoutout to <a href="#">Wendy</a>, <a href="#">Marco</a> and <a href="#">Priya</a>!</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;height:180px">
+            <div style="border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.8 0.05 250), oklch(0.8 0.05 250) 10px, oklch(0.85 0.04 250) 10px, oklch(0.85 0.04 250) 20px);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;color:oklch(0.4 0.03 250)">dog photo</div>
+            <div style="border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.8 0.05 250), oklch(0.8 0.05 250) 10px, oklch(0.85 0.04 250) 10px, oklch(0.85 0.04 250) 20px);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;color:oklch(0.4 0.03 250)">the door</div>
+            <div style="border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.78 0.05 250), oklch(0.78 0.05 250) 10px, oklch(0.83 0.04 250) 10px, oklch(0.83 0.04 250) 20px);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;color:oklch(0.4 0.03 250)">wide shot</div>
+          </div>
+          <div style="display:flex;gap:22px;font-size:13px;color:oklch(0.5 0.02 40)"><span>👁 7,102</span><span style="font-weight:600;color:oklch(0.6 0.19 20)">❤️ Like</span><span>💬 Comment</span></div>
+        </div>
+        <div style="background:oklch(0.96 0.03 75);border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:12px;align-items:center"><div style="width:42px;height:42px;border-radius:50%;background:oklch(0.72 0.16 75);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">SN</div><div><div style="font-weight:700;font-size:14px;color:oklch(0.22 0.02 40)">Saanvi Nair</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">3 hours ago</div></div></div>
+          <div style="font-size:14px;line-height:1.55;color:oklch(0.3 0.02 40)">Tried to make my coffee "fancy" this morning and now there's oat milk foam on the ceiling. 10/10 would recommend the chaos 😄</div>
+          <div style="display:flex;gap:22px;font-size:13px;color:oklch(0.5 0.02 40)"><span>👁 6,355</span><span style="font-weight:600;color:oklch(0.6 0.19 20)">❤️ Like</span><span>💬 Comment</span></div>
+        </div>
+        <div style="background:#f4efe9;border:1px solid oklch(0.9 0.02 60);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:50%;background:oklch(0.72 0.14 250);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">MK</div><input placeholder="Share something positive..." style="flex:1;border:none;background:transparent;font-size:14px;outline:none;color:oklch(0.3 0.02 40)"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;gap:18px;font-size:13px;color:oklch(0.5 0.02 40)"><span>📎 File</span><span>🖼 Image</span><span>📍 Location</span><span>🌍 Friends ⌄</span></div><div style="background:oklch(0.22 0.02 40);color:#fff;padding:8px 22px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Send</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:26px">
+        <div><div style="font-weight:700;font-size:15px;color:oklch(0.25 0.02 40);margin-bottom:14px">Top Vines</div><div style="display:flex;gap:10px"><div style="flex:1;height:150px;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.6 0.05 250), oklch(0.6 0.05 250) 10px, oklch(0.65 0.04 250) 10px, oklch(0.65 0.04 250) 20px)"></div><div style="flex:1;height:150px;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.65 0.06 30), oklch(0.65 0.06 30) 10px, oklch(0.7 0.05 30) 10px, oklch(0.7 0.05 30) 20px)"></div></div></div>
+        <div><div style="font-weight:700;font-size:15px;color:oklch(0.25 0.02 40);margin-bottom:14px">Suggestions</div><div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:oklch(0.7 0.15 320);flex:none"></div><div style="flex:1;font-size:13px;font-weight:600;color:oklch(0.28 0.02 40)">Nadia Ruiz</div><div style="background:oklch(0.22 0.02 40);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Follow</div></div>
+          <div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:oklch(0.75 0.12 60);flex:none"></div><div style="flex:1;font-size:13px;font-weight:600;color:oklch(0.28 0.02 40)">Elio Marsh</div><div style="background:oklch(0.22 0.02 40);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Follow</div></div>
+        </div></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isVines }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Vines</div>
+      <div style="display:flex;gap:10px;font-size:13px">
+        <span style="background:oklch(0.22 0.02 40);color:#fff;padding:7px 16px;border-radius:20px;font-weight:600;cursor:pointer">All</span>
+        <span style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);padding:7px 16px;border-radius:20px;cursor:pointer">😂 Puns</span>
+        <span style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);padding:7px 16px;border-radius:20px;cursor:pointer">🐾 Pet Fails</span>
+        <span style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);padding:7px 16px;border-radius:20px;cursor:pointer">🎤 Stand-Up</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:150px;gap:12px">
+        <div style="grid-row:span 2;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.72 0.09 250), oklch(0.72 0.09 250) 12px, oklch(0.77 0.07 250) 12px, oklch(0.77 0.07 250) 24px)"></div>
+        <div style="border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.74 0.1 30), oklch(0.74 0.1 30) 12px, oklch(0.79 0.08 30) 12px, oklch(0.79 0.08 30) 24px)"></div>
+        <div style="grid-row:span 2;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.72 0.09 340), oklch(0.72 0.09 340) 12px, oklch(0.77 0.07 340) 12px, oklch(0.77 0.07 340) 24px)"></div>
+        <div style="border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.76 0.1 75), oklch(0.76 0.1 75) 12px, oklch(0.81 0.08 75) 12px, oklch(0.81 0.08 75) 24px)"></div>
+        <div style="grid-row:span 2;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.72 0.09 145), oklch(0.72 0.09 145) 12px, oklch(0.77 0.07 145) 12px, oklch(0.77 0.07 145) 24px)"></div>
+        <div style="border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.74 0.1 30), oklch(0.74 0.1 30) 12px, oklch(0.79 0.08 30) 12px, oklch(0.79 0.08 30) 24px)"></div>
+        <div style="border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.72 0.09 250), oklch(0.72 0.09 250) 12px, oklch(0.77 0.07 250) 12px, oklch(0.77 0.07 250) 24px)"></div>
+        <div style="border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.72 0.09 340), oklch(0.72 0.09 340) 12px, oklch(0.77 0.07 340) 12px, oklch(0.77 0.07 340) 24px)"></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isMsg }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Messages</div>
+      <div style="display:flex;height:520px;border:1px solid oklch(0.9 0.02 60);border-radius:20px;overflow:hidden">
+        <div style="width:220px;border-right:1px solid oklch(0.9 0.02 60);padding:14px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;background:oklch(0.95 0.025 250);padding:10px;border-radius:12px;cursor:pointer"><div style="width:36px;height:36px;border-radius:50%;background:oklch(0.72 0.14 250);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">GT</div><div style="min-width:0"><div style="font-size:13px;font-weight:700;color:oklch(0.25 0.02 40)">Gio Tremaine</div><div style="font-size:11px;color:oklch(0.5 0.02 40);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">yes 😂😂</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer"><div style="width:36px;height:36px;border-radius:50%;background:oklch(0.72 0.16 75);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">SN</div><div style="min-width:0"><div style="font-size:13px;font-weight:700;color:oklch(0.25 0.02 40)">Saanvi Nair</div><div style="font-size:11px;color:oklch(0.5 0.02 40)">sent a video</div></div></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer"><div style="width:36px;height:36px;border-radius:50%;background:oklch(0.7 0.15 320);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">ND</div><div style="min-width:0"><div style="font-size:13px;font-weight:700;color:oklch(0.25 0.02 40)">Nadia Ruiz</div><div style="font-size:11px;color:oklch(0.5 0.02 40)">haha for real</div></div></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column">
+          <div style="padding:14px 18px;border-bottom:1px solid oklch(0.9 0.02 60);display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:oklch(0.72 0.14 250);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">GT</div><div style="font-weight:700;font-size:14px;color:oklch(0.25 0.02 40)">Gio Tremaine</div></div>
+          <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px;background:oklch(0.98 0.01 60)">
+            <div style="align-self:flex-start;background:#fff;border:1px solid oklch(0.9 0.02 60);padding:10px 14px;border-radius:16px 16px 16px 4px;font-size:13px;color:oklch(0.3 0.02 40);max-width:70%">lol did you see that dog video</div>
+            <div style="align-self:flex-end;background:oklch(0.22 0.02 40);color:#fff;padding:10px 14px;border-radius:16px 16px 4px 16px;font-size:13px;max-width:70%">yes 😂😂 crying</div>
+            <div style="align-self:flex-start;width:150px;height:100px;border-radius:16px;background:repeating-linear-gradient(45deg, oklch(0.8 0.05 250), oklch(0.8 0.05 250) 10px, oklch(0.85 0.04 250) 10px, oklch(0.85 0.04 250) 20px)"></div>
+          </div>
+          <div style="padding:14px 18px;border-top:1px solid oklch(0.9 0.02 60);display:flex;gap:10px"><input placeholder="Type a message..." style="flex:1;border:1px solid oklch(0.9 0.02 60);background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;outline:none;color:oklch(0.3 0.02 40)"><div style="background:oklch(0.22 0.02 40);color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Send</div></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isFriends }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Friends</div>
+      <div style="display:flex;gap:24px;font-size:15px;border-bottom:1px solid oklch(0.9 0.02 60);padding-bottom:10px"><span style="font-weight:700;color:oklch(0.25 0.02 40);border-bottom:2px solid oklch(0.62 0.19 35);padding-bottom:10px;margin-bottom:-11px">Followers · 240</span><span style="color:oklch(0.5 0.02 40)">Following · 180</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid oklch(0.9 0.02 60);border-radius:16px;padding:14px"><div style="width:44px;height:44px;border-radius:50%;background:oklch(0.7 0.15 320);flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:oklch(0.25 0.02 40)">Nadia Ruiz</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">@nadiaruiz</div></div><div style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Message</div></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid oklch(0.9 0.02 60);border-radius:16px;padding:14px"><div style="width:44px;height:44px;border-radius:50%;background:oklch(0.75 0.12 60);flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:oklch(0.25 0.02 40)">Elio Marsh</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">@eliomarsh</div></div><div style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Message</div></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid oklch(0.9 0.02 60);border-radius:16px;padding:14px"><div style="width:44px;height:44px;border-radius:50%;background:oklch(0.65 0.13 240);flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:oklch(0.25 0.02 40)">Priya Das</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">@priya.d</div></div><div style="background:oklch(0.94 0.02 60);color:oklch(0.3 0.02 40);font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Message</div></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid oklch(0.9 0.02 60);border-radius:16px;padding:14px"><div style="width:44px;height:44px;border-radius:50%;background:oklch(0.72 0.16 75);flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:oklch(0.25 0.02 40)">Wendy Kaur</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">@wendyk</div></div><div style="background:oklch(0.22 0.02 40);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:10px;cursor:pointer">Follow</div></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column">
+      <div style="height:150px;border-radius:20px;background:linear-gradient(120deg, oklch(0.78 0.09 30), oklch(0.75 0.1 340))"></div>
+      <div style="padding:0 8px;margin-top:-44px">
+        <div style="display:flex;align-items:flex-end;gap:16px">
+          <div style="width:92px;height:92px;border-radius:50%;background:#e8ddd2;border:4px solid #fdfbf9;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:30px;color:oklch(0.4 0.05 40)">MK</div>
+          <div style="flex:1;padding-bottom:8px"><div style="font-weight:800;font-size:20px;color:oklch(0.25 0.02 40)">Mira Kondo</div><div style="font-size:13px;color:oklch(0.5 0.02 40)">@mira.laughs · Professional overthinker &amp; part-time comedian</div></div>
+          <div style="background:oklch(0.22 0.02 40);color:#fff;padding:9px 20px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Edit Profile</div>
+        </div>
+        <div style="display:flex;gap:28px;margin:18px 0 20px;font-size:14px"><span><b style="color:oklch(0.25 0.02 40)">142</b> <span style="color:oklch(0.5 0.02 40)">Posts</span></span><span><b style="color:oklch(0.25 0.02 40)">240</b> <span style="color:oklch(0.5 0.02 40)">Followers</span></span><span><b style="color:oklch(0.25 0.02 40)">180</b> <span style="color:oklch(0.5 0.02 40)">Following</span></span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.78 0.05 250), oklch(0.78 0.05 250) 10px, oklch(0.83 0.04 250) 10px, oklch(0.83 0.04 250) 20px)"></div>
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.8 0.06 30), oklch(0.8 0.06 30) 10px, oklch(0.84 0.05 30) 10px, oklch(0.84 0.05 30) 20px)"></div>
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.79 0.06 340), oklch(0.79 0.06 340) 10px, oklch(0.84 0.05 340) 10px, oklch(0.84 0.05 340) 20px)"></div>
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.8 0.06 75), oklch(0.8 0.06 75) 10px, oklch(0.84 0.05 75) 10px, oklch(0.84 0.05 75) 20px)"></div>
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.79 0.06 145), oklch(0.79 0.06 145) 10px, oklch(0.84 0.05 145) 10px, oklch(0.84 0.05 145) 20px)"></div>
+          <div style="aspect-ratio:1;border-radius:14px;background:repeating-linear-gradient(45deg, oklch(0.78 0.05 250), oklch(0.78 0.05 250) 10px, oklch(0.83 0.04 250) 10px, oklch(0.83 0.04 250) 20px)"></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Settings</div>
+      <div style="display:flex;gap:20px">
+        <div style="width:170px;display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <div style="background:oklch(0.22 0.02 40);color:#fff;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer">Privacy</div>
+          <div style="padding:10px 14px;border-radius:12px;color:oklch(0.3 0.02 40);cursor:pointer">Notifications</div>
+          <div style="padding:10px 14px;border-radius:12px;color:oklch(0.3 0.02 40);cursor:pointer">Account</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:700;font-size:16px;color:oklch(0.25 0.02 40);margin-bottom:10px">Privacy</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid oklch(0.92 0.02 60)"><div><div style="font-size:14px;font-weight:600;color:oklch(0.28 0.02 40)">Public profile</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">Anyone can see your posts</div></div><div style="width:42px;height:24px;border-radius:20px;background:oklch(0.62 0.19 35);position:relative"><div style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff"></div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid oklch(0.92 0.02 60)"><div><div style="font-size:14px;font-weight:600;color:oklch(0.28 0.02 40)">Who can message me</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">Restricted to your connections</div></div><div style="font-size:13px;color:oklch(0.3 0.02 40);background:oklch(0.94 0.02 60);padding:6px 14px;border-radius:10px">Followers ⌄</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid oklch(0.92 0.02 60)"><div><div style="font-size:14px;font-weight:600;color:oklch(0.28 0.02 40)">Post visibility</div><div style="font-size:12px;color:oklch(0.5 0.02 40)">Default audience for new posts</div></div><div style="font-size:13px;color:oklch(0.3 0.02 40);background:oklch(0.94 0.02 60);padding:6px 14px;border-radius:10px">Everyone ⌄</div></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div style="font-weight:800;font-size:24px;color:oklch(0.25 0.02 40)">Admin</div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;background:oklch(0.95 0.025 250);border-radius:16px;padding:16px"><div style="font-size:12px;color:oklch(0.5 0.02 40)">Total users</div><div style="font-size:24px;font-weight:800;color:oklch(0.25 0.02 40)">12,402</div></div>
+        <div style="flex:1;background:oklch(0.96 0.03 75);border-radius:16px;padding:16px"><div style="font-size:12px;color:oklch(0.5 0.02 40)">Posts today</div><div style="font-size:24px;font-weight:800;color:oklch(0.25 0.02 40)">318</div></div>
+        <div style="flex:1;background:oklch(0.9 0.06 30);border-radius:16px;padding:16px"><div style="font-size:12px;color:oklch(0.4 0.05 30)">Flagged content</div><div style="font-size:24px;font-weight:800;color:oklch(0.4 0.12 30)">4</div></div>
+      </div>
+      <div style="border:1px solid oklch(0.9 0.02 60);border-radius:16px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:12px 18px;background:oklch(0.96 0.01 60);font-size:12px;font-weight:700;color:oklch(0.4 0.02 40)"><span>User</span><span>Joined</span><span>Status</span><span style="text-align:right">Action</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 18px;font-size:13px;color:oklch(0.3 0.02 40);border-top:1px solid oklch(0.94 0.02 60);align-items:center"><span style="font-weight:600;color:oklch(0.25 0.02 40)">Mira Kondo</span><span>Jan 2026</span><span style="color:oklch(0.55 0.14 145)">● Active</span><span style="text-align:right;color:oklch(0.6 0.12 30);cursor:pointer">Suspend</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 18px;font-size:13px;color:oklch(0.3 0.02 40);border-top:1px solid oklch(0.94 0.02 60);align-items:center"><span style="font-weight:600;color:oklch(0.25 0.02 40)">Gio Tremaine</span><span>Feb 2026</span><span style="color:oklch(0.55 0.14 145)">● Active</span><span style="text-align:right;color:oklch(0.6 0.12 30);cursor:pointer">Suspend</span></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:14px 18px;font-size:13px;color:oklch(0.3 0.02 40);border-top:1px solid oklch(0.94 0.02 60);align-items:center"><span style="font-weight:600;color:oklch(0.25 0.02 40)">Saanvi Nair</span><span>Mar 2026</span><span style="color:oklch(0.6 0.12 30)">● Suspended</span><span style="text-align:right;color:oklch(0.55 0.14 145);cursor:pointer">Restore</span></div>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { page: 'feed' };
+  renderVals() {
+    const p = this.state.page;
+    const go = (x) => () => this.setState({ page: x });
+    const base = { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderRadius:'14px', fontSize:'14px', cursor:'pointer' };
+    const nav = (x) => p === x
+      ? { ...base, background:'oklch(0.22 0.02 40)', color:'#fff', fontWeight:'700' }
+      : { ...base, color:'oklch(0.3 0.02 40)' };
+    return {
+      goFeed: go('feed'), goVines: go('vines'), goMsg: go('messages'), goFriends: go('friends'),
+      goProfile: go('profile'), goSettings: go('settings'), goAdmin: go('admin'),
+      navFeed: nav('feed'), navVines: nav('vines'), navMsg: nav('messages'), navFriends: nav('friends'),
+      navProfile: nav('profile'), navSettings: nav('settings'), navAdmin: nav('admin'),
+      isFeed: p==='feed', isVines: p==='vines', isMsg: p==='messages', isFriends: p==='friends',
+      isProfile: p==='profile', isSettings: p==='settings', isAdmin: p==='admin',
+    };
+  }
+}
+</script>
+</body>
+</html>
