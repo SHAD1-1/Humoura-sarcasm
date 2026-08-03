@@ -18,14 +18,14 @@ const HomeTimeline = () => {
                 <div className="flex-1">
 
                     <textarea
-                        placeholder="What's your meme today?"
+                        placeholder="What's your Joke today?"
                         className="h-24 w-full resize-none bg-transparent text-lg outline-none placeholder:text-white/40"
                     />
 
                     <div className="mt-4 flex justify-end">
 
                         <button className="rounded-full bg-white px-6 py-2 font-semibold text-black">
-                            Post Meme
+                            Post Joke
                         </button>
 
                     </div>
