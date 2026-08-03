@@ -25,7 +25,7 @@ const Home = () => {
           <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
 
             <h1 className="text-xl font-bold">
-              Home
+              Jhakanaka Home
             </h1>
 
           </header>
