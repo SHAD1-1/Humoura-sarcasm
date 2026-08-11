@@ -106,9 +106,12 @@ const LeftSidebar = async () => {
       </nav>
 
       {/* Create Meme Button */}
-      <button className="mt-6 rounded-full bg-white py-3 font-semibold text-black transition hover:bg-gray-200">
+      <Link
+        href="/create"
+        className="mt-6 block rounded-full bg-white py-3 text-center font-semibold text-black transition hover:bg-gray-200"
+      >
         + Create Sarcasm
-      </button>
+      </Link>
 
       {/* User Profile */}
       <div className="mt-auto rounded-xl p-3 transition hover:bg-white/10">
