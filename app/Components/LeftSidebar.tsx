@@ -7,6 +7,8 @@ import { BsBookmarkHeartFill } from "react-icons/bs";
 import { RiUser5Line } from "react-icons/ri";
 import { GiHappySkull } from "react-icons/gi";
 
+import { createClient } from "@/lib/supabase/server";
+
 const NAVIGATION_ITEMS = [
   {
     title: "Home",
@@ -35,9 +37,29 @@ const NAVIGATION_ITEMS = [
   },
 ];
 
-const LeftSidebar = () => {
+const LeftSidebar = async () => {
+  const supabase = await createClient();
+
+  // Get currently logged-in user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Get user's profile
+  let profile = null;
+
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, full_name, avatar_url")
+      .eq("id", user.id)
+      .single();
+
+    profile = data;
+  }
+
   return (
-    <aside className="fixed flex h-screen w-64 flex-col border-r border-white/10 bg-black px-6 py-6">
+    <aside className="fixed flex h-screen w-64 flex-col py-6">
 
       {/* Logo */}
       <Link
@@ -53,7 +75,6 @@ const LeftSidebar = () => {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2">
-
         {NAVIGATION_ITEMS.map((item) => {
           const Icon = item.icon;
 
@@ -84,34 +105,46 @@ const LeftSidebar = () => {
         })}
       </nav>
 
-      {/* Create Meme Button Eitay */}
+      {/* Create Meme Button */}
       <button className="mt-6 rounded-full bg-white py-3 font-semibold text-black transition hover:bg-gray-200">
         + Create Sarcasm
       </button>
 
-      {/* User Profile  */}
+      {/* User Profile */}
       <div className="mt-auto rounded-xl p-3 transition hover:bg-white/10">
-
         <div className="flex items-center gap-3">
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-            S
+          {/* Avatar */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt="Profile"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="font-semibold">
+                {profile?.full_name?.charAt(0).toUpperCase() ||
+                  profile?.username?.charAt(0).toUpperCase() ||
+                  "U"}
+              </span>
+            )}
           </div>
 
-          <div>
-
-            <p className="font-semibold">
-              manush name
+          {/* Name + username */}
+          <div className="min-w-0">
+            <p className="truncate font-semibold">
+              {profile?.full_name || "User"}
             </p>
 
-            <p className="text-sm text-white/50">
-              @manush ID
+            <p className="truncate text-sm text-white/50">
+              {profile?.username
+                ? `@${profile.username}`
+                : "@username"}
             </p>
-
           </div>
 
         </div>
-
       </div>
 
     </aside>
