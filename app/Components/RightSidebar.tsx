@@ -18,7 +18,7 @@ const RightSidebar = () => {
             <div className="mt-6 rounded-2xl border border-white/10 p-5">
 
                 <h2 className="text-lg font-bold">
-                    What's happening
+                    Top memers today
                 </h2>
 
                 <div className="mt-5 space-y-5">
@@ -29,7 +29,7 @@ const RightSidebar = () => {
                             className="cursor-pointer transition hover:text-white"
                         >
                             <p className="font-semibold">
-                                #Trending{i + 1}
+                                #Trendingmeme{i + 1}
                             </p>
 
                             <p className="text-sm text-white/40">
@@ -46,7 +46,7 @@ const RightSidebar = () => {
             <div className="mt-6 rounded-2xl border border-white/10 p-5">
 
                 <h2 className="text-lg font-bold">
-                    Who to follow
+                    Follow them if you know them
                 </h2>
 
                 <div className="mt-5 space-y-5">

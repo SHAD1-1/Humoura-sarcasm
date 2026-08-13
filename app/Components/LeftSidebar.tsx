@@ -21,7 +21,6 @@ const NAVIGATION_ITEMS = [
   {
     title: "Notifications",
     icon: RiNotificationSnoozeFill,
-    badge: 3,
   },
   {
     title: "Messages",
@@ -56,6 +55,29 @@ const LeftSidebar = async () => {
       .single();
 
     profile = data;
+  }
+
+  // Get unread notification count
+  let unreadNotifications = 0;
+
+  if (user) {
+    const { count, error: notificationError } = await supabase
+      .from("notifications")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq("recipient_id", user.id)
+      .eq("read", false);
+
+    if (notificationError) {
+      console.error(
+        "NOTIFICATION COUNT ERROR:",
+        notificationError
+      );
+    } else {
+      unreadNotifications = count || 0;
+    }
   }
 
   return (
@@ -95,11 +117,13 @@ const LeftSidebar = async () => {
 
               <span>{item.title}</span>
 
-              {item.badge && (
-                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
-                  {item.badge}
-                </span>
-              )}
+              {/* Dynamic notification badge */}
+              {item.title === "Notifications" &&
+                unreadNotifications > 0 && (
+                  <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                    {unreadNotifications}
+                  </span>
+                )}
             </Link>
           );
         })}

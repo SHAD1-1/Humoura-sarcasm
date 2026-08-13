@@ -383,6 +383,12 @@ const HomeTimeline = () => {
 
         if (!currentLike) return;
 
+        const meme = memes.find(
+            (item) => item.id === memeId
+        );
+
+        if (!meme) return;
+
         const oldState = {
             ...currentLike,
         };
@@ -427,6 +433,28 @@ const HomeTimeline = () => {
                     ...previous,
                     [memeId]: oldState,
                 }));
+
+                return;
+            }
+
+            // Remove the like notification
+            if (meme.author_id !== user.id) {
+                const {
+                    error: notificationError,
+                } = await supabase
+                    .from("notifications")
+                    .delete()
+                    .eq("recipient_id", meme.author_id)
+                    .eq("actor_id", user.id)
+                    .eq("type", "like")
+                    .eq("meme_id", memeId);
+
+                if (notificationError) {
+                    console.error(
+                        "LIKE NOTIFICATION DELETE ERROR:",
+                        notificationError
+                    );
+                }
             }
 
             return;
@@ -456,6 +484,34 @@ const HomeTimeline = () => {
                 ...previous,
                 [memeId]: oldState,
             }));
+
+            return;
+        }
+
+        // ========================================
+        // CREATE LIKE NOTIFICATION
+        // ========================================
+
+        // Don't notify yourself when you like your own post
+        if (meme.author_id !== user.id) {
+            const {
+                error: notificationError,
+            } = await supabase
+                .from("notifications")
+                .insert({
+                    recipient_id: meme.author_id,
+                    actor_id: user.id,
+                    type: "like",
+                    meme_id: memeId,
+                    reply_id: null,
+                });
+
+            if (notificationError) {
+                console.error(
+                    "LIKE NOTIFICATION ERROR:",
+                    notificationError
+                );
+            }
         }
     }
 
@@ -557,11 +613,6 @@ const HomeTimeline = () => {
             },
         }));
     }
-
-    // ==========================================
-    // SUBMIT REPLY
-    // ==========================================
-
     async function handleReply(memeId: string) {
         const text = replyText.trim();
 
