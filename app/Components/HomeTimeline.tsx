@@ -647,10 +647,11 @@ const HomeTimeline = () => {
             }
 
             // ========================================
-            // INSERT REPLY
+            // INSERT REPLY [Notification er kaaj]
             // ========================================
 
             const {
+                data: insertedReply,
                 error: insertError,
             } = await supabase
                 .from("replies")
@@ -659,7 +660,9 @@ const HomeTimeline = () => {
                     user_id: user.id,
                     meme_id: memeId,
                     reply_id: null,
-                });
+                })
+                .select("id")
+                .single();
 
             if (insertError) {
                 console.error("REPLY INSERT ERROR:", {
@@ -671,6 +674,35 @@ const HomeTimeline = () => {
 
                 setSubmittingReply(false);
                 return;
+            }
+            if (!insertedReply) {
+                console.error("Reply was inserted but no ID was returned.");
+                setSubmittingReply(false);
+                return;
+            }
+            const meme = memes.find(
+                (item) => item.id === memeId
+            );
+
+            if (meme && meme.author_id !== user.id) {
+                const {
+                    error: notificationError,
+                } = await supabase
+                    .from("notifications")
+                    .insert({
+                        recipient_id: meme.author_id,
+                        actor_id: user.id,
+                        type: "reply",
+                        meme_id: memeId,
+                        reply_id: insertedReply.id,
+                    });
+
+                if (notificationError) {
+                    console.error(
+                        "REPLY NOTIFICATION ERROR:",
+                        notificationError
+                    );
+                }
             }
 
             // ========================================

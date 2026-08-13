@@ -1,22 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-
-type Profile = {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-    avatar_url: string | null;
-};
-
-type Notification = {
-    id: string;
-    type: "like" | "reply" | "follow" | "mention";
-    read: boolean;
-    created_at: string;
-    meme_id: string | null;
-    reply_id: string | null;
-    actor_id: string;
-};
+import NotificationPost from "@/app/Components/NotificationPost";
 
 export default async function NotificationDetailPage({
     params,
@@ -24,10 +8,8 @@ export default async function NotificationDetailPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-
     const supabase = await createClient();
 
-    // Get current user
     const {
         data: { user },
     } = await supabase.auth.getUser();
@@ -35,93 +17,63 @@ export default async function NotificationDetailPage({
     if (!user) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-black text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold">
-                        You are not logged in
-                    </h1>
-
-                    <Link
-                        href="/login"
-                        className="mt-4 inline-block rounded-full bg-white px-5 py-2 font-semibold text-black"
-                    >
-                        Log in
-                    </Link>
-                </div>
+                <Link
+                    href="/login"
+                    className="rounded-full bg-white px-5 py-2 text-black"
+                >
+                    Log in
+                </Link>
             </main>
         );
     }
 
-    // Get notification belonging to this user
-    const { data: notification, error: notificationError } =
-        await supabase
-            .from("notifications")
-            .select(
-                "id, type, read, created_at, meme_id, reply_id, actor_id"
-            )
-            .eq("id", id)
-            .eq("recipient_id", user.id)
-            .single();
+    const { data: notification } = await supabase
+        .from("notifications")
+        .select(
+            "id, type, read, created_at, meme_id, reply_id, actor_id"
+        )
+        .eq("id", id)
+        .eq("recipient_id", user.id)
+        .single();
 
-    if (notificationError || !notification) {
+    if (!notification) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-black text-white">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold">
+                    <h1 className="text-xl font-bold">
                         Notification not found
                     </h1>
 
                     <Link
                         href="/notifications"
-                        className="mt-4 inline-block text-white/60 hover:text-white"
+                        className="mt-4 inline-block text-white/50"
                     >
-                        ← Back to notifications
+                        ← Notifications
                     </Link>
                 </div>
             </main>
         );
     }
 
-    // Mark notification as read
     if (!notification.read) {
-        const { error: readError } = await supabase
+        await supabase
             .from("notifications")
             .update({ read: true })
             .eq("id", notification.id)
             .eq("recipient_id", user.id);
-
-        if (readError) {
-            console.error("MARK READ ERROR:", readError);
-        }
     }
 
-    // Notification without a post
     if (!notification.meme_id) {
         return (
             <main className="min-h-screen bg-black text-white">
-                <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
-                    <header className="border-b border-white/10 px-6 py-4">
-                        <Link
-                            href="/notifications"
-                            className="text-white/60 hover:text-white"
-                        >
-                            ← Notifications
-                        </Link>
-
-                        <h1 className="mt-3 text-xl font-bold">
-                            Notification
-                        </h1>
-                    </header>
-
-                    <div className="px-6 py-10">
-                        This notification is not connected to a post.
-                    </div>
+                <div className="mx-auto max-w-2xl px-6 py-8">
+                    No post is attached to this notification.
                 </div>
             </main>
         );
     }
 
-    // Get the exact post that was liked/replied to
-    const { data: meme, error: memeError } = await supabase
+    const { data: meme } = await supabase
         .from("memes")
         .select(
             "id, content, image_url, author_id, created_at"
@@ -129,30 +81,16 @@ export default async function NotificationDetailPage({
         .eq("id", notification.meme_id)
         .single();
 
-    if (memeError || !meme) {
+    if (!meme) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-black text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold">
-                        Post not found
-                    </h1>
-
-                    <p className="mt-2 text-white/50">
-                        The post may have been deleted.
-                    </p>
-
-                    <Link
-                        href="/notifications"
-                        className="mt-4 inline-block text-white/60 hover:text-white"
-                    >
-                        ← Back to notifications
-                    </Link>
+            <main className="min-h-screen bg-black text-white">
+                <div className="mx-auto max-w-2xl px-6 py-8">
+                    Post not found.
                 </div>
             </main>
         );
     }
 
-    // Get the post author's profile
     const { data: author } = await supabase
         .from("profiles")
         .select(
@@ -161,35 +99,95 @@ export default async function NotificationDetailPage({
         .eq("id", meme.author_id)
         .single();
 
-    // Get actor profile
-    const { data: actor } = await supabase
-        .from("profiles")
+    const { data: likes } = await supabase
+        .from("meme_likes")
+        .select("user_id")
+        .eq("meme_id", meme.id);
+
+    const initialLikeCount = likes?.length || 0;
+
+    const initialLiked =
+        likes?.some(
+            (like) => like.user_id === user.id
+        ) || false;
+
+    const { data: savedRow } = await supabase
+        .from("saved_memes")
+        .select("meme_id")
+        .eq("user_id", user.id)
+        .eq("meme_id", meme.id)
+        .maybeSingle();
+
+    const initialSaved = !!savedRow;
+
+    const { data: replyData } = await supabase
+        .from("replies")
         .select(
-            "id, username, full_name, avatar_url"
+            "id, text, user_id, meme_id, reply_id, created_at"
         )
-        .eq("id", notification.actor_id)
-        .single();
+        .eq("meme_id", meme.id)
+        .order("created_at", {
+            ascending: true,
+        });
 
-    let actionText = "interacted with this post.";
+    const replyUserIds = [
+        ...new Set(
+            (replyData || []).map(
+                (reply) => reply.user_id
+            )
+        ),
+    ];
 
-    if (notification.type === "like") {
-        actionText = "liked this post.";
+    let replyProfiles: any[] = [];
+
+    if (replyUserIds.length > 0) {
+        const { data } = await supabase
+            .from("profiles")
+            .select(
+                "id, username, full_name, avatar_url"
+            )
+            .in("id", replyUserIds);
+
+        replyProfiles = data || [];
     }
 
-    if (notification.type === "reply") {
-        actionText = "replied to this post.";
+    const replies =
+        (replyData || []).map((reply) => ({
+            ...reply,
+            profile:
+                replyProfiles.find(
+                    (profile) =>
+                        profile.id === reply.user_id
+                ) || null,
+        }));
+
+    let referencedReply = null;
+    let referencedReplyAuthor = null;
+
+    if (notification.reply_id) {
+        referencedReply =
+            replies.find(
+                (reply) =>
+                    reply.id === notification.reply_id
+            ) || null;
+
+        if (referencedReply) {
+            referencedReplyAuthor =
+                replyProfiles.find(
+                    (profile) =>
+                        profile.id === referencedReply.user_id
+                ) || null;
+        }
     }
 
-    // Page
     return (
         <main className="min-h-screen bg-black text-white">
-            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
+            <div className="mx-auto w-full max-w-2xl border-x border-white/10">
 
-                {/* Header */}
-                <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
+                <header className="border-b border-white/10 px-6 py-4">
                     <Link
                         href="/notifications"
-                        className="text-white/60 hover:text-white"
+                        className="text-white/50 hover:text-white"
                     >
                         ← Notifications
                     </Link>
@@ -199,75 +197,21 @@ export default async function NotificationDetailPage({
                     </h1>
                 </header>
 
-                {/* Notification context */}
-                <div className="border-b border-white/10 px-6 py-4 text-sm text-white/60">
-                    <span className="font-semibold text-white">
-                        {actor?.full_name || "Someone"}
-                    </span>{" "}
-                    {actionText}
-                </div>
+                <NotificationPost
+                    meme={meme}
+                    author={author}
+                    referencedReply={referencedReply}
+                    referencedReplyAuthor={
+                        referencedReplyAuthor
+                    }
+                    initialLikeCount={
+                        initialLikeCount
+                    }
+                    initialLiked={initialLiked}
+                    initialSaved={initialSaved}
+                    initialReplies={replies}
+                />
 
-                {/* Exact Post */}
-                <article className="px-6 py-6">
-
-                    {/* Author */}
-                    <div className="flex items-center gap-3">
-
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
-                            {author?.avatar_url ? (
-                                <img
-                                    src={author.avatar_url}
-                                    alt="Avatar"
-                                    className="h-full w-full object-cover"
-                                />
-                            ) : (
-                                author?.full_name
-                                    ?.charAt(0)
-                                    .toUpperCase() ||
-                                author?.username
-                                    ?.charAt(0)
-                                    .toUpperCase() ||
-                                "U"
-                            )}
-                        </div>
-
-                        <div className="min-w-0">
-                            <p className="truncate font-semibold">
-                                {author?.full_name || "User"}
-                            </p>
-
-                            <p className="truncate text-sm text-white/40">
-                                @{author?.username || "username"}
-                            </p>
-
-                            <p className="text-xs text-white/30">
-                                {new Date(
-                                    meme.created_at
-                                ).toLocaleString()}
-                            </p>
-                        </div>
-
-                    </div>
-
-                    {/* Text */}
-                    {meme.content && (
-                        <p className="mt-5 whitespace-pre-wrap text-[15px] leading-7">
-                            {meme.content}
-                        </p>
-                    )}
-
-                    {/* Image */}
-                    {meme.image_url && (
-                        <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                            <img
-                                src={meme.image_url}
-                                alt="Meme"
-                                className="max-h-[650px] w-full object-contain"
-                            />
-                        </div>
-                    )}
-
-                </article>
             </div>
         </main>
     );
