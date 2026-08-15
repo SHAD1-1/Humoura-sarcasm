@@ -32,7 +32,7 @@ const ExplorePage = () => {
     const [error, setError] = useState("");
 
     // ==========================================
-    // LOAD RECENT CONTENT
+    // LOAD RECENT POSTS
     // ==========================================
 
     useEffect(() => {
@@ -40,16 +40,18 @@ const ExplorePage = () => {
             setLoading(true);
             setError("");
 
-            const { data: memeData, error: memeError } =
-                await supabase
-                    .from("memes")
-                    .select(
-                        "id, content, image_url, author_id, created_at"
-                    )
-                    .order("created_at", {
-                        ascending: false,
-                    })
-                    .limit(20);
+            const {
+                data: memeData,
+                error: memeError,
+            } = await supabase
+                .from("memes")
+                .select(
+                    "id, content, image_url, author_id, created_at"
+                )
+                .order("created_at", {
+                    ascending: false,
+                })
+                .limit(20);
 
             if (memeError) {
                 console.error(
@@ -76,16 +78,25 @@ const ExplorePage = () => {
                 ),
             ];
 
-            const { data: profileData } =
-                await supabase
-                    .from("profiles")
-                    .select(
-                        "id, username, full_name, avatar_url"
-                    )
-                    .in("id", authorIds);
+            const {
+                data: profileData,
+                error: profileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .in("id", authorIds);
 
-            const formattedMemes: Meme[] =
-                memeData.map((meme) => ({
+            if (profileError) {
+                console.error(
+                    "EXPLORE PROFILE ERROR:",
+                    profileError
+                );
+            }
+
+            const formattedMemes: Meme[] = memeData.map(
+                (meme) => ({
                     id: meme.id,
                     content: meme.content,
                     image_url: meme.image_url,
@@ -97,7 +108,8 @@ const ExplorePage = () => {
                                 profile.id ===
                                 meme.author_id
                         ) || null,
-                }));
+                })
+            );
 
             setMemes(formattedMemes);
             setLoading(false);
@@ -119,123 +131,120 @@ const ExplorePage = () => {
             return;
         }
 
-        const timeout = setTimeout(
-            async () => {
-                setSearching(true);
+        const timeout = setTimeout(async () => {
+            setSearching(true);
 
-                const searchTerm = `%${query}%`;
+            const searchTerm = `%${query}%`;
 
-                // Search profiles
-                const {
-                    data: profileData,
-                    error: profileError,
-                } = await supabase
-                    .from("profiles")
-                    .select(
-                        "id, username, full_name, avatar_url"
-                    )
-                    .or(
-                        `username.ilike.${searchTerm},full_name.ilike.${searchTerm}`
-                    )
-                    .limit(10);
+            // ========================================
+            // SEARCH USERS
+            // ========================================
 
-                if (profileError) {
-                    console.error(
-                        "PROFILE SEARCH ERROR:",
-                        profileError
-                    );
-                }
+            const {
+                data: profileData,
+                error: profileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .or(
+                    `username.ilike.${searchTerm},full_name.ilike.${searchTerm}`
+                )
+                .limit(10);
 
+            if (profileError) {
+                console.error(
+                    "PROFILE SEARCH ERROR:",
+                    profileError
+                );
+
+                setProfiles([]);
+            } else {
                 setProfiles(profileData || []);
+            }
 
-                // Search memes
-                const {
-                    data: memeData,
-                    error: memeError,
-                } = await supabase
-                    .from("memes")
-                    .select(
-                        "id, content, image_url, author_id, created_at"
-                    )
-                    .ilike(
-                        "content",
-                        searchTerm
-                    )
-                    .order(
-                        "created_at",
-                        {
-                            ascending: false,
-                        }
-                    )
-                    .limit(20);
+            // ========================================
+            // SEARCH POSTS
+            // ========================================
 
-                if (memeError) {
-                    console.error(
-                        "MEME SEARCH ERROR:",
-                        memeError
-                    );
-                }
+            const {
+                data: memeData,
+                error: memeError,
+            } = await supabase
+                .from("memes")
+                .select(
+                    "id, content, image_url, author_id, created_at"
+                )
+                .ilike("content", searchTerm)
+                .order("created_at", {
+                    ascending: false,
+                })
+                .limit(20);
 
-                if (
-                    memeData &&
-                    memeData.length > 0
-                ) {
-                    const authorIds = [
-                        ...new Set(
-                            memeData.map(
-                                (meme) =>
-                                    meme.author_id
-                            )
-                        ),
-                    ];
+            if (memeError) {
+                console.error(
+                    "MEME SEARCH ERROR:",
+                    memeError
+                );
 
-                    const {
-                        data: authorProfiles,
-                    } = await supabase
-                        .from("profiles")
-                        .select(
-                            "id, username, full_name, avatar_url"
-                        )
-                        .in(
-                            "id",
-                            authorIds
-                        );
-
-                    const formattedMemes =
-                        memeData.map(
-                            (meme) => ({
-                                id: meme.id,
-                                content:
-                                    meme.content,
-                                image_url:
-                                    meme.image_url,
-                                author_id:
-                                    meme.author_id,
-                                created_at:
-                                    meme.created_at,
-                                profile:
-                                    authorProfiles?.find(
-                                        (profile) =>
-                                            profile.id ===
-                                            meme.author_id
-                                    ) || null,
-                            })
-                        );
-
-                    setMemes(
-                        formattedMemes
-                    );
-                } else {
-                    setMemes([]);
-                }
-
+                setMemes([]);
                 setSearching(false);
-            },
-            300
-        );
+                return;
+            }
 
-        return () =>
-            clearTimeout(timeout);
+            if (!memeData || memeData.length === 0) {
+                setMemes([]);
+                setSearching(false);
+                return;
+            }
+
+            const authorIds = [
+                ...new Set(
+                    memeData.map(
+                        (meme) => meme.author_id
+                    )
+                ),
+            ];
+
+            const {
+                data: authorProfiles,
+                error: authorProfileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .in("id", authorIds);
+
+            if (authorProfileError) {
+                console.error(
+                    "AUTHOR PROFILE SEARCH ERROR:",
+                    authorProfileError
+                );
+            }
+
+            const formattedMemes: Meme[] = memeData.map(
+                (meme) => ({
+                    id: meme.id,
+                    content: meme.content,
+                    image_url: meme.image_url,
+                    author_id: meme.author_id,
+                    created_at: meme.created_at,
+                    profile:
+                        authorProfiles?.find(
+                            (profile) =>
+                                profile.id ===
+                                meme.author_id
+                        ) || null,
+                })
+            );
+
+            setMemes(formattedMemes);
+            setSearching(false);
+        }, 300);
+
+        return () => clearTimeout(timeout);
     }, [search]);
 
     // ==========================================
@@ -261,6 +270,28 @@ const ExplorePage = () => {
     }
 
     // ==========================================
+    // ERROR
+    // ==========================================
+
+    if (error) {
+        return (
+            <main className="min-h-screen bg-black text-white">
+                <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
+                    <header className="border-b border-white/10 px-6 py-4">
+                        <h1 className="text-xl font-bold">
+                            Explore
+                        </h1>
+                    </header>
+
+                    <div className="px-6 py-10 text-center text-red-400">
+                        {error}
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
+    // ==========================================
     // PAGE
     // ==========================================
 
@@ -271,6 +302,7 @@ const ExplorePage = () => {
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
+
                     <h1 className="text-xl font-bold">
                         Explore
                     </h1>
@@ -282,17 +314,18 @@ const ExplorePage = () => {
                             type="text"
                             value={search}
                             onChange={(e) =>
-                                setSearch(
-                                    e.target.value
-                                )
+                                setSearch(e.target.value)
                             }
                             placeholder="🔍 Search posts or users..."
                             className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
                         />
                     </div>
+
                 </header>
 
-                {/* SEARCH RESULTS */}
+                {/* ======================================
+                    SEARCH RESULTS
+                ====================================== */}
 
                 {search.trim() ? (
                     <div>
@@ -300,6 +333,7 @@ const ExplorePage = () => {
                         {/* PEOPLE */}
 
                         <section>
+
                             <div className="border-b border-white/10 px-6 py-4">
                                 <h2 className="font-semibold">
                                     People
@@ -314,13 +348,21 @@ const ExplorePage = () => {
                                 profiles.map(
                                     (profile) => (
                                         <Link
-                                            key={
-                                                profile.id
+                                            key={profile.id}
+                                            href={
+                                                profile.username
+                                                    ? `/profile/${encodeURIComponent(
+                                                        profile.username
+                                                    )}`
+                                                    : "/profile"
                                             }
-                                            href={`/profile/${profile.username}`}
                                             className="flex items-center gap-3 border-b border-white/10 px-6 py-4 transition hover:bg-white/[0.03]"
                                         >
+
+                                            {/* AVATAR */}
+
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+
                                                 {profile.avatar_url ? (
                                                     <img
                                                         src={
@@ -331,20 +373,20 @@ const ExplorePage = () => {
                                                     />
                                                 ) : (
                                                     profile.full_name
-                                                        ?.charAt(
-                                                            0
-                                                        )
+                                                        ?.charAt(0)
                                                         .toUpperCase() ||
                                                     profile.username
-                                                        ?.charAt(
-                                                            0
-                                                        )
+                                                        ?.charAt(0)
                                                         .toUpperCase() ||
                                                     "U"
                                                 )}
+
                                             </div>
 
+                                            {/* USER INFO */}
+
                                             <div className="min-w-0">
+
                                                 <p className="truncate font-semibold">
                                                     {profile.full_name ||
                                                         "User"}
@@ -355,16 +397,20 @@ const ExplorePage = () => {
                                                     {profile.username ||
                                                         "username"}
                                                 </p>
+
                                             </div>
+
                                         </Link>
                                     )
                                 )
                             )}
+
                         </section>
 
                         {/* POSTS */}
 
                         <section>
+
                             <div className="border-b border-white/10 px-6 py-4">
                                 <h2 className="font-semibold">
                                     Posts
@@ -372,26 +418,29 @@ const ExplorePage = () => {
                             </div>
 
                             {searching ? (
-                                <div className="px-6 py-6 text-center text-sm text-white/40">
+                                <div className="px-6 py-8 text-center text-sm text-white/40">
                                     Searching...
                                 </div>
                             ) : memes.length === 0 ? (
-                                <div className="px-6 py-6 text-sm text-white/40">
+                                <div className="px-6 py-8 text-sm text-white/40">
                                     No posts found.
                                 </div>
                             ) : (
                                 memes.map(
                                     (meme) => (
-                                        <article
-                                            key={
-                                                meme.id
-                                            }
-                                            className="border-b border-white/10 px-6 py-5"
+                                        <Link
+                                            key={meme.id}
+                                            href={`/memes/${meme.id}`}
+                                            className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
                                         >
+
+                                            {/* AUTHOR */}
+
                                             <div className="flex items-center gap-3">
+
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
-                                                    {meme
-                                                        .profile
+
+                                                    {meme.profile
                                                         ?.avatar_url ? (
                                                         <img
                                                             src={
@@ -410,33 +459,46 @@ const ExplorePage = () => {
                                                                 0
                                                             )
                                                             .toUpperCase() ||
+                                                        meme
+                                                            .profile
+                                                            ?.username
+                                                            ?.charAt(
+                                                                0
+                                                            )
+                                                            .toUpperCase() ||
                                                         "U"
                                                     )}
+
                                                 </div>
 
-                                                <div>
-                                                    <p className="font-semibold">
-                                                        {meme
-                                                            .profile
+                                                <div className="min-w-0">
+
+                                                    <p className="truncate font-semibold">
+                                                        {meme.profile
                                                             ?.full_name ||
                                                             "User"}
                                                     </p>
 
-                                                    <p className="text-xs text-white/40">
+                                                    <p className="truncate text-xs text-white/40">
                                                         @
-                                                        {meme
-                                                            .profile
+                                                        {meme.profile
                                                             ?.username ||
                                                             "username"}
                                                     </p>
+
                                                 </div>
+
                                             </div>
+
+                                            {/* POST TEXT */}
 
                                             {meme.content && (
                                                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                                                     {meme.content}
                                                 </p>
                                             )}
+
+                                            {/* IMAGE */}
 
                                             {meme.image_url && (
                                                 <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -450,23 +512,30 @@ const ExplorePage = () => {
                                                 </div>
                                             )}
 
+                                            {/* TIME */}
+
                                             <p className="mt-3 text-xs text-white/30">
                                                 {new Date(
                                                     meme.created_at
                                                 ).toLocaleString()}
                                             </p>
-                                        </article>
+
+                                        </Link>
                                     )
                                 )
                             )}
+
                         </section>
+
                     </div>
                 ) : (
-                    /* ========================================
+
+                    /* ======================================
                        RECENT POSTS
-                    ======================================== */
+                    ====================================== */
 
                     <section>
+
                         <div className="border-b border-white/10 px-6 py-4">
                             <h2 className="font-semibold">
                                 Recent Posts
@@ -480,58 +549,73 @@ const ExplorePage = () => {
                         ) : (
                             memes.map(
                                 (meme) => (
-                                    <article
-                                        key={
-                                            meme.id
-                                        }
-                                        className="border-b border-white/10 px-6 py-5"
+                                    <Link
+                                        key={meme.id}
+                                        href={`/memes/${meme.id}`}
+                                        className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
                                     >
+
+                                        {/* AUTHOR */}
+
                                         <div className="flex items-center gap-3">
 
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
+
                                                 {meme.profile
                                                     ?.avatar_url ? (
                                                     <img
                                                         src={
-                                                            meme.profile
+                                                            meme
+                                                                .profile
                                                                 .avatar_url
                                                         }
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (
-                                                    meme.profile
+                                                    meme
+                                                        .profile
                                                         ?.full_name
-                                                        ?.charAt(
-                                                            0
-                                                        )
+                                                        ?.charAt(0)
+                                                        .toUpperCase() ||
+                                                    meme
+                                                        .profile
+                                                        ?.username
+                                                        ?.charAt(0)
                                                         .toUpperCase() ||
                                                     "U"
                                                 )}
+
                                             </div>
 
-                                            <div>
-                                                <p className="font-semibold">
+                                            <div className="min-w-0">
+
+                                                <p className="truncate font-semibold">
                                                     {meme.profile
                                                         ?.full_name ||
                                                         "User"}
                                                 </p>
 
-                                                <p className="text-xs text-white/40">
+                                                <p className="truncate text-xs text-white/40">
                                                     @
                                                     {meme.profile
                                                         ?.username ||
                                                         "username"}
                                                 </p>
+
                                             </div>
 
                                         </div>
+
+                                        {/* TEXT */}
 
                                         {meme.content && (
                                             <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                                                 {meme.content}
                                             </p>
                                         )}
+
+                                        {/* IMAGE */}
 
                                         {meme.image_url && (
                                             <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -545,17 +629,22 @@ const ExplorePage = () => {
                                             </div>
                                         )}
 
+                                        {/* TIME */}
+
                                         <p className="mt-3 text-xs text-white/30">
                                             {new Date(
                                                 meme.created_at
                                             ).toLocaleString()}
                                         </p>
-                                    </article>
+
+                                    </Link>
                                 )
                             )
                         )}
+
                     </section>
                 )}
+
             </div>
         </main>
     );
