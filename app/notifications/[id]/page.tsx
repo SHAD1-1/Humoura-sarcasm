@@ -1,4 +1,4 @@
-```tsx
+
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NotificationPost from "@/app/Components/NotificationPost";
@@ -29,10 +29,6 @@ export default async function NotificationDetailPage({
 
     const supabase = await createClient();
 
-    // ========================================
-    // GET CURRENT USER
-    // ========================================
-
     const {
         data: { user },
     } = await supabase.auth.getUser();
@@ -55,10 +51,6 @@ export default async function NotificationDetailPage({
             </main>
         );
     }
-
-    // ========================================
-    // GET NOTIFICATION
-    // ========================================
 
     const {
         data: notification,
@@ -91,10 +83,6 @@ export default async function NotificationDetailPage({
         );
     }
 
-    // ========================================
-    // MARK AS READ
-    // ========================================
-
     if (!notification.read) {
         const { error: readError } = await supabase
             .from("notifications")
@@ -105,16 +93,9 @@ export default async function NotificationDetailPage({
             .eq("recipient_id", user.id);
 
         if (readError) {
-            console.error(
-                "MARK READ ERROR:",
-                readError
-            );
+            console.error("MARK READ ERROR:", readError);
         }
     }
-
-    // ========================================
-    // MUST HAVE A MEME
-    // ========================================
 
     if (!notification.meme_id) {
         return (
@@ -140,10 +121,6 @@ export default async function NotificationDetailPage({
             </main>
         );
     }
-
-    // ========================================
-    // GET MEME
-    // ========================================
 
     const {
         data: meme,
@@ -179,23 +156,13 @@ export default async function NotificationDetailPage({
         );
     }
 
-    // ========================================
-    // GET POST AUTHOR
-    // ========================================
-
-    const {
-        data: author,
-    } = await supabase
+    const { data: author } = await supabase
         .from("profiles")
         .select(
             "id, username, full_name, avatar_url"
         )
         .eq("id", meme.author_id)
         .single();
-
-    // ========================================
-    // GET LIKES
-    // ========================================
 
     const {
         data: likeData,
@@ -212,17 +179,12 @@ export default async function NotificationDetailPage({
         );
     }
 
-    const initialLikeCount =
-        likeData?.length || 0;
+    const initialLikeCount = likeData?.length || 0;
 
     const initialLiked =
         likeData?.some(
             (like) => like.user_id === user.id
         ) || false;
-
-    // ========================================
-    // GET SAVE STATUS
-    // ========================================
 
     const {
         data: savedRow,
@@ -243,10 +205,6 @@ export default async function NotificationDetailPage({
 
     const initialSaved = !!savedRow;
 
-    // ========================================
-    // GET ALL REPLIES
-    // ========================================
-
     const {
         data: replyData,
         error: replyError,
@@ -266,10 +224,6 @@ export default async function NotificationDetailPage({
             replyError
         );
     }
-
-    // ========================================
-    // GET REPLY PROFILES
-    // ========================================
 
     const replyUserIds = [
         ...new Set(
@@ -302,12 +256,8 @@ export default async function NotificationDetailPage({
         replyProfiles = profiles || [];
     }
 
-    // ========================================
-    // FORMAT REPLIES
-    // ========================================
-
-    const replies: Reply[] =
-        (replyData || []).map((reply) => ({
+    const replies: Reply[] = (replyData || []).map(
+        (reply) => ({
             id: reply.id,
             text: reply.text,
             user_id: reply.user_id,
@@ -320,11 +270,8 @@ export default async function NotificationDetailPage({
                     (profile) =>
                         profile.id === reply.user_id
                 ) || null,
-        }));
-
-    // ========================================
-    // GET REFERENCED REPLY
-    // ========================================
+        })
+    );
 
     let referencedReply: Reply | null = null;
     let referencedReplyAuthor: Profile | null = null;
@@ -346,16 +293,11 @@ export default async function NotificationDetailPage({
         }
     }
 
-    // ========================================
-    // PAGE
-    // ========================================
-
     return (
         <main className="min-h-screen bg-black text-white">
             <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-
                     <Link
                         href="/notifications"
                         className="text-white/50 transition hover:text-white"
@@ -366,13 +308,9 @@ export default async function NotificationDetailPage({
                     <h1 className="mt-3 text-xl font-bold">
                         Post
                     </h1>
-
                 </header>
 
-                {/* NOTIFICATION CONTEXT */}
-
                 <div className="border-b border-white/10 px-6 py-4 text-sm text-white/60">
-
                     {notification.type === "like" && (
                         <span>
                             Someone liked this post.
@@ -396,10 +334,7 @@ export default async function NotificationDetailPage({
                             Someone mentioned you.
                         </span>
                     )}
-
                 </div>
-
-                {/* INTERACTIVE POST */}
 
                 <NotificationPost
                     meme={meme}
@@ -415,7 +350,6 @@ export default async function NotificationDetailPage({
                     initialSaved={initialSaved}
                     initialReplies={replies}
                 />
-
             </div>
         </main>
     );
