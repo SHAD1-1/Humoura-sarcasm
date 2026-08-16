@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NotificationPost from "@/app/Components/NotificationPost";
+import PublicProfileActions from "@/app/Components/PublicProfileActions";
 
 type Profile = {
     id: string;
@@ -513,40 +514,22 @@ export default async function PublicProfilePage({
                         </p>
                     )}
 
-                    {/* FOLLOW */}
-                    <div className="mt-6">
-                        {!(
-                            user.id === profile.id
-                        ) && (
-                                <button
-                                    type="button"
-                                    className={`rounded-full px-6 py-2 font-semibold ${initialFollowing
-                                            ? "border border-white/20 text-white"
-                                            : "bg-white text-black"
-                                        }`}
-                                >
-                                    {initialFollowing
-                                        ? "Following"
-                                        : "Follow"}
-                                </button>
-                            )}
+                    {/* FOLLOW / COUNTS */}
 
-                        <div className="mt-5 flex items-center gap-6 text-sm text-white/50">
-                            <span>
-                                <strong className="text-white">
-                                    {followerCount || 0}
-                                </strong>{" "}
-                                followers
-                            </span>
+                    <PublicProfileActions
+                        profileId={profile.id}
+                        currentUserId={user.id}
+                        initialFollowerCount={
+                            followerCount || 0
+                        }
+                        initialFollowingCount={
+                            followingCount || 0
+                        }
+                        initialFollowing={
+                            initialFollowing
+                        }
+                    />
 
-                            <span>
-                                <strong className="text-white">
-                                    {followingCount || 0}
-                                </strong>{" "}
-                                following
-                            </span>
-                        </div>
-                    </div>
                     {/* POST COUNT */}
 
                     <p className="mt-4 text-sm text-white/40">

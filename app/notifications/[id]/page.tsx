@@ -1,3 +1,4 @@
+```tsx
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NotificationPost from "@/app/Components/NotificationPost";
@@ -7,6 +8,16 @@ type Profile = {
     username: string | null;
     full_name: string | null;
     avatar_url: string | null;
+};
+
+type Reply = {
+    id: string;
+    text: string;
+    user_id: string;
+    meme_id: string;
+    reply_id: string | null;
+    created_at: string;
+    profile: Profile | null;
 };
 
 export default async function NotificationDetailPage({
@@ -109,7 +120,6 @@ export default async function NotificationDetailPage({
         return (
             <main className="min-h-screen bg-black text-white">
                 <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
-
                     <header className="border-b border-white/10 px-6 py-4">
                         <Link
                             href="/notifications"
@@ -126,7 +136,6 @@ export default async function NotificationDetailPage({
                     <div className="px-6 py-10 text-center text-white/50">
                         This notification is not connected to a post.
                     </div>
-
                 </div>
             </main>
         );
@@ -297,9 +306,14 @@ export default async function NotificationDetailPage({
     // FORMAT REPLIES
     // ========================================
 
-    const replies =
+    const replies: Reply[] =
         (replyData || []).map((reply) => ({
-            ...reply,
+            id: reply.id,
+            text: reply.text,
+            user_id: reply.user_id,
+            meme_id: reply.meme_id,
+            reply_id: reply.reply_id,
+            created_at: reply.created_at,
 
             profile:
                 replyProfiles.find(
@@ -312,8 +326,8 @@ export default async function NotificationDetailPage({
     // GET REFERENCED REPLY
     // ========================================
 
-    let referencedReply = null;
-    let referencedReplyAuthor = null;
+    let referencedReply: Reply | null = null;
+    let referencedReplyAuthor: Profile | null = null;
 
     if (notification.reply_id) {
         referencedReply =
@@ -406,3 +420,4 @@ export default async function NotificationDetailPage({
         </main>
     );
 }
+```
