@@ -1,640 +1,606 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import NotificationPost from "@/app/Components/NotificationPost";
-import PublicProfile from "@/app/Components/PublicProfile";
+import { createClient } from "@/lib/supabase/client";
 
 type Profile = {
     id: string;
     username: string | null;
     full_name: string | null;
-    bio: string | null;
     avatar_url: string | null;
 };
 
-type Reply = {
+type Meme = {
     id: string;
-    text: string;
-    user_id: string;
-    meme_id: string;
-    reply_id: string | null;
+    content: string | null;
+    image_url: string | null;
+    author_id: string;
     created_at: string;
-    profile: {
-        id: string;
-        username: string | null;
-        full_name: string | null;
-        avatar_url: string | null;
-    } | null;
+    profile: Profile | null;
 };
 
-export default async function PublicProfilePage({
-    params,
-}: {
-    params: Promise<{ username: string }>;
-}) {
-    const { username } = await params;
+const ExplorePage = () => {
+    const supabase = createClient();
 
-    // Decode the username coming from /profile/[username]
-    const decodedUsername =
-        decodeURIComponent(username).trim();
+    const [search, setSearch] = useState("");
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [memes, setMemes] = useState<Meme[]>([]);
 
-    const supabase = await createClient();
+    const [loading, setLoading] = useState(true);
+    const [searching, setSearching] = useState(false);
+    const [error, setError] = useState("");
 
-    // ========================================
-    // CURRENT USER
-    // ========================================
+    // ==========================================
+    // LOAD RECENT POSTS
+    // ==========================================
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    useEffect(() => {
+        async function loadExplore() {
+            setLoading(true);
+            setError("");
 
-    if (!user) {
+            const {
+                data: memeData,
+                error: memeError,
+            } = await supabase
+                .from("memes")
+                .select(
+                    "id, content, image_url, author_id, created_at"
+                )
+                .order("created_at", {
+                    ascending: false,
+                })
+                .limit(20);
+
+            if (memeError) {
+                console.error(
+                    "EXPLORE MEME ERROR:",
+                    memeError
+                );
+
+                setError(memeError.message);
+                setLoading(false);
+                return;
+            }
+
+            if (!memeData || memeData.length === 0) {
+                setMemes([]);
+                setLoading(false);
+                return;
+            }
+
+            const authorIds = [
+                ...new Set(
+                    memeData.map(
+                        (meme) => meme.author_id
+                    )
+                ),
+            ];
+
+            const {
+                data: profileData,
+                error: profileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .in("id", authorIds);
+
+            if (profileError) {
+                console.error(
+                    "EXPLORE PROFILE ERROR:",
+                    profileError
+                );
+            }
+
+            const formattedMemes: Meme[] =
+                memeData.map((meme) => ({
+                    id: meme.id,
+                    content: meme.content,
+                    image_url: meme.image_url,
+                    author_id: meme.author_id,
+                    created_at: meme.created_at,
+                    profile:
+                        profileData?.find(
+                            (profile) =>
+                                profile.id ===
+                                meme.author_id
+                        ) || null,
+                }));
+
+            setMemes(formattedMemes);
+            setLoading(false);
+        }
+
+        loadExplore();
+    }, []);
+
+    // ==========================================
+    // SEARCH
+    // ==========================================
+
+    useEffect(() => {
+        const query = search.trim();
+
+        if (!query) {
+            setProfiles([]);
+            setSearching(false);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            setSearching(true);
+
+            const searchTerm = `%${query}%`;
+
+            // ========================================
+            // SEARCH USERS
+            // ========================================
+
+            const {
+                data: profileData,
+                error: profileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .or(
+                    `username.ilike.${searchTerm},full_name.ilike.${searchTerm}`
+                )
+                .limit(10);
+
+            if (profileError) {
+                console.error(
+                    "PROFILE SEARCH ERROR:",
+                    profileError
+                );
+
+                setProfiles([]);
+            } else {
+                setProfiles(profileData || []);
+            }
+
+            // ========================================
+            // SEARCH POSTS
+            // ========================================
+
+            const {
+                data: memeData,
+                error: memeError,
+            } = await supabase
+                .from("memes")
+                .select(
+                    "id, content, image_url, author_id, created_at"
+                )
+                .ilike("content", searchTerm)
+                .order("created_at", {
+                    ascending: false,
+                })
+                .limit(20);
+
+            if (memeError) {
+                console.error(
+                    "MEME SEARCH ERROR:",
+                    memeError
+                );
+
+                setMemes([]);
+                setSearching(false);
+                return;
+            }
+
+            if (!memeData || memeData.length === 0) {
+                setMemes([]);
+                setSearching(false);
+                return;
+            }
+
+            const authorIds = [
+                ...new Set(
+                    memeData.map(
+                        (meme) => meme.author_id
+                    )
+                ),
+            ];
+
+            const {
+                data: authorProfiles,
+                error: authorProfileError,
+            } = await supabase
+                .from("profiles")
+                .select(
+                    "id, username, full_name, avatar_url"
+                )
+                .in("id", authorIds);
+
+            if (authorProfileError) {
+                console.error(
+                    "AUTHOR PROFILE SEARCH ERROR:",
+                    authorProfileError
+                );
+            }
+
+            const formattedMemes: Meme[] =
+                memeData.map((meme) => ({
+                    id: meme.id,
+                    content: meme.content,
+                    image_url: meme.image_url,
+                    author_id: meme.author_id,
+                    created_at: meme.created_at,
+                    profile:
+                        authorProfiles?.find(
+                            (profile) =>
+                                profile.id ===
+                                meme.author_id
+                        ) || null,
+                }));
+
+            setMemes(formattedMemes);
+            setSearching(false);
+        }, 300);
+
+        return () => clearTimeout(timeout);
+    }, [search]);
+
+    // ==========================================
+    // LOADING
+    // ==========================================
+
+    if (loading) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold">
-                        You are not logged in
-                    </h1>
+            <main className="min-h-screen bg-black text-white">
+                <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
+                    <header className="border-b border-white/10 px-6 py-4">
+                        <h1 className="text-xl font-bold">
+                            Explore
+                        </h1>
+                    </header>
 
-                    <Link
-                        href="/login"
-                        className="mt-4 inline-block rounded-full bg-white px-5 py-2 font-semibold text-black"
-                    >
-                        Log in
-                    </Link>
+                    <div className="px-6 py-10 text-center text-white/50">
+                        Loading Explore...
+                    </div>
                 </div>
             </main>
         );
     }
 
-    // ========================================
-    // GET PROFILE
-    // ========================================
+    // ==========================================
+    // ERROR
+    // ==========================================
 
-    const {
-        data: profile,
-        error: profileError,
-    } = await supabase
-        .from("profiles")
-        .select(
-            "id, username, full_name, bio, avatar_url"
-        )
-        .eq("username", decodedUsername)
-        .single();
-
-    if (profileError) {
-        console.error(
-            "PUBLIC PROFILE ERROR:",
-            {
-                message: profileError.message,
-                details: profileError.details,
-                hint: profileError.hint,
-                code: profileError.code,
-            }
-        );
-    }
-
-    if (!profile) {
+    if (error) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold">
-                        User not found
-                    </h1>
+            <main className="min-h-screen bg-black text-white">
+                <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
+                    <header className="border-b border-white/10 px-6 py-4">
+                        <h1 className="text-xl font-bold">
+                            Explore
+                        </h1>
+                    </header>
 
-                    <p className="mt-2 text-white/50">
-                        Username:
-                        {" "}
-                        {decodedUsername}
-                    </p>
-
-                    <Link
-                        href="/explore"
-                        className="mt-5 inline-block rounded-full bg-white px-5 py-2 font-semibold text-black"
-                    >
-                        Back to Explore
-                    </Link>
+                    <div className="px-6 py-10 text-center text-red-400">
+                        {error}
+                    </div>
                 </div>
             </main>
         );
     }
 
-    // ========================================
-    // FOLLOWER COUNT
-    // ========================================
-
-    const {
-        count: followerCount,
-        error: followerError,
-    } = await supabase
-        .from("follows")
-        .select("*", {
-            count: "exact",
-            head: true,
-        })
-        .eq(
-            "following_id",
-            profile.id
-        );
-
-    if (followerError) {
-        console.error(
-            "FOLLOWER COUNT ERROR:",
-            followerError
-        );
-    }
-
-    // ========================================
-    // FOLLOWING COUNT
-    // ========================================
-
-    const {
-        count: followingCount,
-        error: followingError,
-    } = await supabase
-        .from("follows")
-        .select("*", {
-            count: "exact",
-            head: true,
-        })
-        .eq(
-            "follower_id",
-            profile.id
-        );
-
-    if (followingError) {
-        console.error(
-            "FOLLOWING COUNT ERROR:",
-            followingError
-        );
-    }
-
-    // ========================================
-    // CURRENT USER FOLLOWING THIS PROFILE?
-    // ========================================
-
-    const {
-        data: existingFollow,
-        error: existingFollowError,
-    } = await supabase
-        .from("follows")
-        .select("follower_id")
-        .eq(
-            "follower_id",
-            user.id
-        )
-        .eq(
-            "following_id",
-            profile.id
-        )
-        .maybeSingle();
-
-    if (existingFollowError) {
-        console.error(
-            "EXISTING FOLLOW ERROR:",
-            existingFollowError
-        );
-    }
-
-    const initialFollowing =
-        !!existingFollow;
-
-    // ========================================
-    // GET PROFILE POSTS
-    // ========================================
-
-    const {
-        data: memeData,
-        error: memeError,
-    } = await supabase
-        .from("memes")
-        .select(
-            "id, content, image_url, author_id, created_at"
-        )
-        .eq(
-            "author_id",
-            profile.id
-        )
-        .order(
-            "created_at",
-            {
-                ascending: false,
-            }
-        );
-
-    if (memeError) {
-        console.error(
-            "PROFILE MEMES ERROR:",
-            memeError
-        );
-    }
-
-    const profileMemes =
-        memeData || [];
-
-    // ========================================
-    // GET MEME IDS
-    // ========================================
-
-    const memeIds =
-        profileMemes.map(
-            (meme) => meme.id
-        );
-
-    // ========================================
-    // GET LIKES
-    // ========================================
-
-    let likeData: {
-        meme_id: string;
-        user_id: string;
-    }[] = [];
-
-    if (memeIds.length > 0) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from("meme_likes")
-            .select(
-                "meme_id, user_id"
-            )
-            .in(
-                "meme_id",
-                memeIds
-            );
-
-        if (error) {
-            console.error(
-                "PROFILE LIKES ERROR:",
-                error
-            );
-        }
-
-        likeData = data || [];
-    }
-
-    // ========================================
-    // GET SAVED MEMES
-    // ========================================
-
-    let savedData: {
-        meme_id: string;
-    }[] = [];
-
-    if (memeIds.length > 0) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from("saved_memes")
-            .select(
-                "meme_id"
-            )
-            .eq(
-                "user_id",
-                user.id
-            )
-            .in(
-                "meme_id",
-                memeIds
-            );
-
-        if (error) {
-            console.error(
-                "PROFILE SAVED MEMES ERROR:",
-                error
-            );
-        }
-
-        savedData = data || [];
-    }
-
-    // ========================================
-    // GET REPLIES
-    // ========================================
-
-    let replyData: {
-        id: string;
-        text: string;
-        user_id: string;
-        meme_id: string;
-        reply_id: string | null;
-        created_at: string;
-    }[] = [];
-
-    if (memeIds.length > 0) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from("replies")
-            .select(
-                "id, text, user_id, meme_id, reply_id, created_at"
-            )
-            .in(
-                "meme_id",
-                memeIds
-            )
-            .order(
-                "created_at",
-                {
-                    ascending: true,
-                }
-            );
-
-        if (error) {
-            console.error(
-                "PROFILE REPLIES ERROR:",
-                error
-            );
-        }
-
-        replyData = data || [];
-    }
-
-    // ========================================
-    // GET REPLY USER IDS
-    // ========================================
-
-    const replyUserIds = [
-        ...new Set(
-            replyData.map(
-                (reply) =>
-                    reply.user_id
-            )
-        ),
-    ];
-
-    // ========================================
-    // GET REPLY PROFILES
-    // ========================================
-
-    let replyProfiles: {
-        id: string;
-        username: string | null;
-        full_name: string | null;
-        avatar_url: string | null;
-    }[] = [];
-
-    if (
-        replyUserIds.length > 0
-    ) {
-        const {
-            data,
-            error,
-        } = await supabase
-            .from("profiles")
-            .select(
-                "id, username, full_name, avatar_url"
-            )
-            .in(
-                "id",
-                replyUserIds
-            );
-
-        if (error) {
-            console.error(
-                "PROFILE REPLY PROFILES ERROR:",
-                error
-            );
-        }
-
-        replyProfiles = data || [];
-    }
-
-    // ========================================
-    // GROUP REPLIES BY MEME
-    // ========================================
-
-    const repliesByMeme: Record<
-        string,
-        Reply[]
-    > = {};
-
-    replyData.forEach(
-        (reply) => {
-            const formattedReply: Reply = {
-                id: reply.id,
-                text: reply.text,
-                user_id:
-                    reply.user_id,
-                meme_id:
-                    reply.meme_id,
-                reply_id:
-                    reply.reply_id,
-                created_at:
-                    reply.created_at,
-                profile:
-                    replyProfiles.find(
-                        (profile) =>
-                            profile.id ===
-                            reply.user_id
-                    ) || null,
-            };
-
-            if (
-                !repliesByMeme[
-                reply.meme_id
-                ]
-            ) {
-                repliesByMeme[
-                    reply.meme_id
-                ] = [];
-            }
-
-            repliesByMeme[
-                reply.meme_id
-            ].push(
-                formattedReply
-            );
-        }
-    );
-
-    // ========================================
+    // ==========================================
     // PAGE
-    // ========================================
+    // ==========================================
 
     return (
         <main className="min-h-screen bg-black text-white">
-
             <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
 
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-
-                    <Link
-                        href="/explore"
-                        className="text-white/50 transition hover:text-white"
-                    >
-                        ← Explore
-                    </Link>
-
-                    <h1 className="mt-3 text-xl font-bold">
-                        Profile
+                    <h1 className="text-xl font-bold">
+                        Explore
                     </h1>
 
+                    {/* SEARCH */}
+
+                    <div className="mt-4">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) =>
+                                setSearch(
+                                    e.target.value
+                                )
+                            }
+                            placeholder="🔍 Search posts or users..."
+                            className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
+                        />
+                    </div>
                 </header>
 
-                {/* PROFILE */}
+                {/* ======================================
+                    SEARCH RESULTS
+                ====================================== */}
 
-                <section className="border-b border-white/10 px-6 py-8">
+                {search.trim() ? (
+                    <div>
 
-                    {/* AVATAR */}
+                        {/* PEOPLE */}
 
-                    <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white/20 text-3xl font-bold">
+                        <section>
+                            <div className="border-b border-white/10 px-6 py-4">
+                                <h2 className="font-semibold">
+                                    People
+                                </h2>
+                            </div>
 
-                        {profile.avatar_url ? (
-                            <img
-                                src={
-                                    profile.avatar_url
-                                }
-                                alt="Profile"
-                                className="h-full w-full object-cover"
-                            />
-                        ) : (
-                            profile.full_name
-                                ?.charAt(0)
-                                .toUpperCase() ||
-                            profile.username
-                                ?.charAt(0)
-                                .toUpperCase() ||
-                            "U"
-                        )}
+                            {profiles.length === 0 ? (
+                                <div className="px-6 py-6 text-sm text-white/40">
+                                    No users found.
+                                </div>
+                            ) : (
+                                profiles.map(
+                                    (profile) => (
+                                        <Link
+                                            key={profile.id}
+                                            href={`/profile/${profile.id}`}
+                                            className="flex items-center gap-3 border-b border-white/10 px-6 py-4 transition hover:bg-white/[0.03]"
+                                        >
+                                            {/* AVATAR */}
 
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+                                                {profile.avatar_url ? (
+                                                    <img
+                                                        src={
+                                                            profile.avatar_url
+                                                        }
+                                                        alt="Avatar"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    profile.full_name
+                                                        ?.charAt(
+                                                            0
+                                                        )
+                                                        .toUpperCase() ||
+                                                    profile.username
+                                                        ?.charAt(
+                                                            0
+                                                        )
+                                                        .toUpperCase() ||
+                                                    "U"
+                                                )}
+                                            </div>
+
+                                            {/* USER INFO */}
+
+                                            <div className="min-w-0">
+                                                <p className="truncate font-semibold">
+                                                    {profile.full_name ||
+                                                        "User"}
+                                                </p>
+
+                                                <p className="truncate text-sm text-white/40">
+                                                    @
+                                                    {profile.username ||
+                                                        "username"}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    )
+                                )
+                            )}
+                        </section>
+
+                        {/* POSTS */}
+
+                        <section>
+                            <div className="border-b border-white/10 px-6 py-4">
+                                <h2 className="font-semibold">
+                                    Posts
+                                </h2>
+                            </div>
+
+                            {searching ? (
+                                <div className="px-6 py-8 text-center text-sm text-white/40">
+                                    Searching...
+                                </div>
+                            ) : memes.length === 0 ? (
+                                <div className="px-6 py-8 text-sm text-white/40">
+                                    No posts found.
+                                </div>
+                            ) : (
+                                memes.map(
+                                    (meme) => (
+                                        <Link
+                                            key={meme.id}
+                                            href={`/memes/${meme.id}`}
+                                            className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
+                                        >
+                                            {/* AUTHOR */}
+
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
+                                                    {meme.profile?.avatar_url ? (
+                                                        <img
+                                                            src={
+                                                                meme.profile
+                                                                    .avatar_url
+                                                            }
+                                                            alt="Avatar"
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        meme.profile?.full_name
+                                                            ?.charAt(
+                                                                0
+                                                            )
+                                                            .toUpperCase() ||
+                                                        meme.profile?.username
+                                                            ?.charAt(
+                                                                0
+                                                            )
+                                                            .toUpperCase() ||
+                                                        "U"
+                                                    )}
+                                                </div>
+
+                                                <div className="min-w-0">
+                                                    <p className="truncate font-semibold">
+                                                        {meme.profile?.full_name ||
+                                                            "User"}
+                                                    </p>
+
+                                                    <p className="truncate text-xs text-white/40">
+                                                        @
+                                                        {meme.profile?.username ||
+                                                            "username"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* POST TEXT */}
+
+                                            {meme.content && (
+                                                <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
+                                                    {meme.content}
+                                                </p>
+                                            )}
+
+                                            {/* IMAGE */}
+
+                                            {meme.image_url && (
+                                                <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                                                    <img
+                                                        src={
+                                                            meme.image_url
+                                                        }
+                                                        alt="Meme"
+                                                        className="max-h-[500px] w-full object-contain"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* TIME */}
+
+                                            <p className="mt-3 text-xs text-white/30">
+                                                {new Date(
+                                                    meme.created_at
+                                                ).toLocaleString()}
+                                            </p>
+                                        </Link>
+                                    )
+                                )
+                            )}
+                        </section>
                     </div>
+                ) : (
+                    /* ======================================
+                       RECENT POSTS
+                    ====================================== */
 
-                    {/* NAME */}
-
-                    <div className="mt-5">
-
-                        <h2 className="text-2xl font-bold">
-                            {profile.full_name ||
-                                "User"}
-                        </h2>
-
-                        <p className="text-white/50">
-                            @
-                            {profile.username ||
-                                "username"}
-                        </p>
-
-                    </div>
-
-                    {/* BIO */}
-
-                    {profile.bio && (
-                        <p className="mt-4 whitespace-pre-wrap text-white/80">
-                            {profile.bio}
-                        </p>
-                    )}
-
-                    {/* FOLLOW / COUNTS */}
-
-                    <PublicProfile
-                        profile={profile}
-                        currentUserId={
-                            user.id
-                        }
-                        initialFollowerCount={
-                            followerCount ||
-                            0
-                        }
-                        initialFollowingCount={
-                            followingCount ||
-                            0
-                        }
-                        initialFollowing={
-                            initialFollowing
-                        }
-                    />
-
-                </section>
-
-                {/* POSTS */}
-
-                <section>
-
-                    <div className="border-b border-white/10 px-6 py-4">
-                        <h2 className="font-semibold">
-                            Posts
-                        </h2>
-                    </div>
-
-                    {profileMemes.length ===
-                        0 ? (
-                        <div className="px-6 py-12 text-center text-white/40">
-                            No posts yet.
+                    <section>
+                        <div className="border-b border-white/10 px-6 py-4">
+                            <h2 className="font-semibold">
+                                Recent Posts
+                            </h2>
                         </div>
-                    ) : (
-                        profileMemes.map(
-                            (meme) => {
-                                const memeLikes =
-                                    likeData.filter(
-                                        (
-                                            like
-                                        ) =>
-                                            like.meme_id ===
-                                            meme.id
-                                    );
 
-                                const initialLikeCount =
-                                    memeLikes.length;
+                        {memes.length === 0 ? (
+                            <div className="px-6 py-10 text-center text-white/40">
+                                No posts yet.
+                            </div>
+                        ) : (
+                            memes.map(
+                                (meme) => (
+                                    <Link
+                                        key={meme.id}
+                                        href={`/memes/${meme.id}`}
+                                        className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
+                                    >
+                                        {/* AUTHOR */}
 
-                                const initialLiked =
-                                    memeLikes.some(
-                                        (
-                                            like
-                                        ) =>
-                                            like.user_id ===
-                                            user.id
-                                    );
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
+                                                {meme.profile?.avatar_url ? (
+                                                    <img
+                                                        src={
+                                                            meme.profile
+                                                                .avatar_url
+                                                        }
+                                                        alt="Avatar"
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    meme.profile?.full_name
+                                                        ?.charAt(
+                                                            0
+                                                        )
+                                                        .toUpperCase() ||
+                                                    meme.profile?.username
+                                                        ?.charAt(
+                                                            0
+                                                        )
+                                                        .toUpperCase() ||
+                                                    "U"
+                                                )}
+                                            </div>
 
-                                const initialSaved =
-                                    savedData.some(
-                                        (
-                                            item
-                                        ) =>
-                                            item.meme_id ===
-                                            meme.id
-                                    );
+                                            <div className="min-w-0">
+                                                <p className="truncate font-semibold">
+                                                    {meme.profile?.full_name ||
+                                                        "User"}
+                                                </p>
 
-                                return (
-                                    <NotificationPost
-                                        key={
-                                            meme.id
-                                        }
-                                        meme={
-                                            meme
-                                        }
-                                        author={
-                                            profile
-                                        }
-                                        initialLikeCount={
-                                            initialLikeCount
-                                        }
-                                        initialLiked={
-                                            initialLiked
-                                        }
-                                        initialSaved={
-                                            initialSaved
-                                        }
-                                        initialReplies={
-                                            repliesByMeme[
-                                            meme.id
-                                            ] ||
-                                            []
-                                        }
-                                    />
-                                );
-                            }
-                        )
-                    )}
+                                                <p className="truncate text-xs text-white/40">
+                                                    @
+                                                    {meme.profile?.username ||
+                                                        "username"}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                </section>
+                                        {/* TEXT */}
 
+                                        {meme.content && (
+                                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
+                                                {meme.content}
+                                            </p>
+                                        )}
+
+                                        {/* IMAGE */}
+
+                                        {meme.image_url && (
+                                            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                                                <img
+                                                    src={
+                                                        meme.image_url
+                                                    }
+                                                    alt="Meme"
+                                                    className="max-h-[500px] w-full object-contain"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* TIME */}
+
+                                        <p className="mt-3 text-xs text-white/30">
+                                            {new Date(
+                                                meme.created_at
+                                            ).toLocaleString()}
+                                        </p>
+                                    </Link>
+                                )
+                            )
+                        )}
+                    </section>
+                )}
             </div>
-
         </main>
     );
-}
+};
+
+export default ExplorePage;

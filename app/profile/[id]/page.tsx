@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NotificationPost from "@/app/Components/NotificationPost";
-import PublicProfile from "@/app/Components/PublicProfile";
 
 type Profile = {
     id: string;
@@ -29,14 +28,14 @@ type Reply = {
 export default async function PublicProfilePage({
     params,
 }: {
-    params: Promise<{ username: string }>;
+    params: Promise<{ id: string }>;
 }) {
-    const { username } = await params;
+    const { id } = await params;
 
     const supabase = await createClient();
 
     // ========================================
-    // GET LOGGED-IN USER
+    // CURRENT USER
     // ========================================
 
     const {
@@ -45,7 +44,7 @@ export default async function PublicProfilePage({
 
     if (!user) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-black text-white">
+            <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold">
                         You are not logged in
@@ -63,7 +62,7 @@ export default async function PublicProfilePage({
     }
 
     // ========================================
-    // GET PROFILE
+    // GET PROFILE BY UUID
     // ========================================
 
     const {
@@ -74,10 +73,22 @@ export default async function PublicProfilePage({
         .select(
             "id, username, full_name, bio, avatar_url"
         )
-        .eq("username", username)
-        .single();
+        .eq("id", id)
+        .maybeSingle();
 
-    if (profileError || !profile) {
+    if (profileError) {
+        console.error(
+            "PUBLIC PROFILE ERROR:",
+            {
+                message: profileError.message,
+                details: profileError.details,
+                hint: profileError.hint,
+                code: profileError.code,
+            }
+        );
+    }
+
+    if (!profile) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
                 <div className="text-center">
@@ -85,8 +96,8 @@ export default async function PublicProfilePage({
                         User not found
                     </h1>
 
-                    <p className="mt-2 text-white/50">
-                        This profile doesn't exist.
+                    <p className="mt-2 text-sm text-white/40">
+                        Profile ID: {id}
                     </p>
 
                     <Link
@@ -100,49 +111,88 @@ export default async function PublicProfilePage({
         );
     }
 
-    const { count: followerCount } =
-        await supabase
-            .from("follows")
-            .select("*", {
-                count: "exact",
-                head: true,
-            })
-            .eq(
-                "following_id",
-                profile.id
-            );
+    // ========================================
+    // FOLLOWER COUNT
+    // ========================================
 
-    const { count: followingCount } =
-        await supabase
-            .from("follows")
-            .select("*", {
-                count: "exact",
-                head: true,
-            })
-            .eq(
-                "follower_id",
-                profile.id
-            );
+    const {
+        count: followerCount,
+        error: followerError,
+    } = await supabase
+        .from("follows")
+        .select("*", {
+            count: "exact",
+            head: true,
+        })
+        .eq(
+            "following_id",
+            profile.id
+        );
 
-    const { data: existingFollow } =
-        await supabase
-            .from("follows")
-            .select("follower_id")
-            .eq(
-                "follower_id",
-                user.id
-            )
-            .eq(
-                "following_id",
-                profile.id
-            )
-            .maybeSingle();
+    if (followerError) {
+        console.error(
+            "FOLLOWER COUNT ERROR:",
+            followerError
+        );
+    }
+
+    // ========================================
+    // FOLLOWING COUNT
+    // ========================================
+
+    const {
+        count: followingCount,
+        error: followingError,
+    } = await supabase
+        .from("follows")
+        .select("*", {
+            count: "exact",
+            head: true,
+        })
+        .eq(
+            "follower_id",
+            profile.id
+        );
+
+    if (followingError) {
+        console.error(
+            "FOLLOWING COUNT ERROR:",
+            followingError
+        );
+    }
+
+    // ========================================
+    // CHECK IF CURRENT USER FOLLOWS PROFILE
+    // ========================================
+
+    const {
+        data: existingFollow,
+        error: existingFollowError,
+    } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq(
+            "follower_id",
+            user.id
+        )
+        .eq(
+            "following_id",
+            profile.id
+        )
+        .maybeSingle();
+
+    if (existingFollowError) {
+        console.error(
+            "EXISTING FOLLOW ERROR:",
+            existingFollowError
+        );
+    }
 
     const initialFollowing =
         !!existingFollow;
 
     // ========================================
-    // GET USER'S POSTS
+    // GET PROFILE POSTS
     // ========================================
 
     const {
@@ -153,10 +203,16 @@ export default async function PublicProfilePage({
         .select(
             "id, content, image_url, author_id, created_at"
         )
-        .eq("author_id", profile.id)
-        .order("created_at", {
-            ascending: false,
-        });
+        .eq(
+            "author_id",
+            profile.id
+        )
+        .order(
+            "created_at",
+            {
+                ascending: false,
+            }
+        );
 
     if (memeError) {
         console.error(
@@ -168,7 +224,7 @@ export default async function PublicProfilePage({
     const memes = memeData || [];
 
     // ========================================
-    // GET ALL POST IDS
+    // GET MEME IDS
     // ========================================
 
     const memeIds = memes.map(
@@ -176,7 +232,7 @@ export default async function PublicProfilePage({
     );
 
     // ========================================
-    // GET ALL LIKES
+    // GET LIKES
     // ========================================
 
     let likeData: {
@@ -185,20 +241,22 @@ export default async function PublicProfilePage({
     }[] = [];
 
     if (memeIds.length > 0) {
-        const { data, error } =
-            await supabase
-                .from("meme_likes")
-                .select(
-                    "meme_id, user_id"
-                )
-                .in(
-                    "meme_id",
-                    memeIds
-                );
+        const {
+            data,
+            error,
+        } = await supabase
+            .from("meme_likes")
+            .select(
+                "meme_id, user_id"
+            )
+            .in(
+                "meme_id",
+                memeIds
+            );
 
         if (error) {
             console.error(
-                "PROFILE LIKE ERROR:",
+                "PROFILE LIKES ERROR:",
                 error
             );
         }
@@ -207,7 +265,7 @@ export default async function PublicProfilePage({
     }
 
     // ========================================
-    // GET SAVED POSTS
+    // GET SAVED MEMES
     // ========================================
 
     let savedData: {
@@ -215,22 +273,26 @@ export default async function PublicProfilePage({
     }[] = [];
 
     if (memeIds.length > 0) {
-        const { data, error } =
-            await supabase
-                .from("saved_memes")
-                .select("meme_id")
-                .eq(
-                    "user_id",
-                    user.id
-                )
-                .in(
-                    "meme_id",
-                    memeIds
-                );
+        const {
+            data,
+            error,
+        } = await supabase
+            .from("saved_memes")
+            .select(
+                "meme_id"
+            )
+            .eq(
+                "user_id",
+                user.id
+            )
+            .in(
+                "meme_id",
+                memeIds
+            );
 
         if (error) {
             console.error(
-                "PROFILE SAVED ERROR:",
+                "PROFILE SAVED MEMES ERROR:",
                 error
             );
         }
@@ -239,7 +301,7 @@ export default async function PublicProfilePage({
     }
 
     // ========================================
-    // GET ALL REPLIES
+    // GET REPLIES
     // ========================================
 
     let replyData: {
@@ -252,22 +314,24 @@ export default async function PublicProfilePage({
     }[] = [];
 
     if (memeIds.length > 0) {
-        const { data, error } =
-            await supabase
-                .from("replies")
-                .select(
-                    "id, text, user_id, meme_id, reply_id, created_at"
-                )
-                .in(
-                    "meme_id",
-                    memeIds
-                )
-                .order(
-                    "created_at",
-                    {
-                        ascending: true,
-                    }
-                );
+        const {
+            data,
+            error,
+        } = await supabase
+            .from("replies")
+            .select(
+                "id, text, user_id, meme_id, reply_id, created_at"
+            )
+            .in(
+                "meme_id",
+                memeIds
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: true,
+                }
+            );
 
         if (error) {
             console.error(
@@ -280,7 +344,7 @@ export default async function PublicProfilePage({
     }
 
     // ========================================
-    // GET REPLY USERS
+    // GET REPLY PROFILES
     // ========================================
 
     const replyUserIds = [
@@ -299,7 +363,9 @@ export default async function PublicProfilePage({
         avatar_url: string | null;
     }[] = [];
 
-    if (replyUserIds.length > 0) {
+    if (
+        replyUserIds.length > 0
+    ) {
         const {
             data,
             error,
@@ -315,12 +381,13 @@ export default async function PublicProfilePage({
 
         if (error) {
             console.error(
-                "PROFILE REPLY PROFILE ERROR:",
+                "PROFILE REPLY PROFILES ERROR:",
                 error
             );
         }
 
-        replyProfiles = data || [];
+        replyProfiles =
+            data || [];
     }
 
     // ========================================
@@ -332,41 +399,47 @@ export default async function PublicProfilePage({
         Reply[]
     > = {};
 
-    replyData.forEach((reply) => {
-        const formattedReply: Reply =
-        {
-            id: reply.id,
-            text: reply.text,
-            user_id:
-                reply.user_id,
-            meme_id:
-                reply.meme_id,
-            reply_id:
-                reply.reply_id,
-            created_at:
-                reply.created_at,
-            profile:
-                replyProfiles.find(
-                    (profile) =>
-                        profile.id ===
-                        reply.user_id
-                ) || null,
-        };
+    replyData.forEach(
+        (reply) => {
+            const formattedReply: Reply =
+            {
+                id: reply.id,
+                text: reply.text,
+                user_id:
+                    reply.user_id,
+                meme_id:
+                    reply.meme_id,
+                reply_id:
+                    reply.reply_id,
+                created_at:
+                    reply.created_at,
+                profile:
+                    replyProfiles.find(
+                        (
+                            profile
+                        ) =>
+                            profile.id ===
+                            reply.user_id
+                    ) || null,
+            };
 
-        if (
-            !repliesByMeme[
-            reply.meme_id
-            ]
-        ) {
+            if (
+                !repliesByMeme[
+                reply.meme_id
+                ]
+            ) {
+                repliesByMeme[
+                    reply.meme_id
+                ] = [];
+            }
+
             repliesByMeme[
                 reply.meme_id
-            ] = [];
+            ].push(
+                formattedReply
+            );
         }
-
-        repliesByMeme[
-            reply.meme_id
-        ].push(formattedReply);
-    });
+    );
 
     // ========================================
     // PAGE
@@ -379,7 +452,6 @@ export default async function PublicProfilePage({
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-
                     <Link
                         href="/explore"
                         className="text-white/50 transition hover:text-white"
@@ -390,7 +462,6 @@ export default async function PublicProfilePage({
                     <h1 className="mt-3 text-xl font-bold">
                         Profile
                     </h1>
-
                 </header>
 
                 {/* PROFILE */}
@@ -400,7 +471,6 @@ export default async function PublicProfilePage({
                     {/* AVATAR */}
 
                     <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-white/20 text-3xl font-bold">
-
                         {profile.avatar_url ? (
                             <img
                                 src={
@@ -411,34 +481,28 @@ export default async function PublicProfilePage({
                             />
                         ) : (
                             profile.full_name
-                                ?.charAt(
-                                    0
-                                )
+                                ?.charAt(0)
                                 .toUpperCase() ||
                             profile.username
-                                ?.charAt(
-                                    0
-                                )
+                                ?.charAt(0)
                                 .toUpperCase() ||
                             "U"
                         )}
-
                     </div>
 
                     {/* NAME */}
 
                     <div className="mt-5">
-
                         <h2 className="text-2xl font-bold">
                             {profile.full_name ||
                                 "User"}
                         </h2>
 
                         <p className="text-white/50">
-                            @{profile.username ||
+                            @
+                            {profile.username ||
                                 "username"}
                         </p>
-
                     </div>
 
                     {/* BIO */}
@@ -448,34 +512,54 @@ export default async function PublicProfilePage({
                             {profile.bio}
                         </p>
                     )}
-                    <PublicProfile
-                        profile={profile}
-                        initialFollowerCount={
-                            followerCount || 0
-                        }
-                        initialFollowingCount={
-                            followingCount || 0
-                        }
-                        initialFollowing={
-                            initialFollowing
-                        }
-                    />
 
+                    {/* FOLLOW */}
+                    <div className="mt-6">
+                        {!(
+                            user.id === profile.id
+                        ) && (
+                                <button
+                                    type="button"
+                                    className={`rounded-full px-6 py-2 font-semibold ${initialFollowing
+                                            ? "border border-white/20 text-white"
+                                            : "bg-white text-black"
+                                        }`}
+                                >
+                                    {initialFollowing
+                                        ? "Following"
+                                        : "Follow"}
+                                </button>
+                            )}
+
+                        <div className="mt-5 flex items-center gap-6 text-sm text-white/50">
+                            <span>
+                                <strong className="text-white">
+                                    {followerCount || 0}
+                                </strong>{" "}
+                                followers
+                            </span>
+
+                            <span>
+                                <strong className="text-white">
+                                    {followingCount || 0}
+                                </strong>{" "}
+                                following
+                            </span>
+                        </div>
+                    </div>
                     {/* POST COUNT */}
 
                     <p className="mt-4 text-sm text-white/40">
                         {memes.length}{" "}
-                        {memes.length ===
-                            1
+                        {memes.length === 1
                             ? "post"
                             : "posts"}
                     </p>
-
                 </section>
 
                 {/* POSTS */}
 
-                <div>
+                <section>
 
                     <div className="border-b border-white/10 px-6 py-4">
                         <h2 className="font-semibold">
@@ -483,8 +567,7 @@ export default async function PublicProfilePage({
                         </h2>
                     </div>
 
-                    {memes.length ===
-                        0 ? (
+                    {memes.length === 0 ? (
                         <div className="px-6 py-12 text-center text-white/40">
                             No posts yet.
                         </div>
@@ -520,7 +603,9 @@ export default async function PublicProfilePage({
                                         key={
                                             meme.id
                                         }
-                                        meme={meme}
+                                        meme={
+                                            meme
+                                        }
                                         author={
                                             profile
                                         }
@@ -536,16 +621,15 @@ export default async function PublicProfilePage({
                                         initialReplies={
                                             repliesByMeme[
                                             meme.id
-                                            ] || []
+                                            ] ||
+                                            []
                                         }
                                     />
                                 );
                             }
                         )
                     )}
-
-                </div>
-
+                </section>
             </div>
         </main>
     );
