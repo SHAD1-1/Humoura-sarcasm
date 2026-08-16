@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import NotificationPost from "@/app/Components/NotificationPost";
+import PublicProfile from "@/app/Components/PublicProfile";
 
 type Profile = {
     id: string;
@@ -98,6 +99,47 @@ export default async function PublicProfilePage({
             </main>
         );
     }
+
+    const { count: followerCount } =
+        await supabase
+            .from("follows")
+            .select("*", {
+                count: "exact",
+                head: true,
+            })
+            .eq(
+                "following_id",
+                profile.id
+            );
+
+    const { count: followingCount } =
+        await supabase
+            .from("follows")
+            .select("*", {
+                count: "exact",
+                head: true,
+            })
+            .eq(
+                "follower_id",
+                profile.id
+            );
+
+    const { data: existingFollow } =
+        await supabase
+            .from("follows")
+            .select("follower_id")
+            .eq(
+                "follower_id",
+                user.id
+            )
+            .eq(
+                "following_id",
+                profile.id
+            )
+            .maybeSingle();
+
+    const initialFollowing =
+        !!existingFollow;
 
     // ========================================
     // GET USER'S POSTS
@@ -406,6 +448,18 @@ export default async function PublicProfilePage({
                             {profile.bio}
                         </p>
                     )}
+                    <PublicProfile
+                        profile={profile}
+                        initialFollowerCount={
+                            followerCount || 0
+                        }
+                        initialFollowingCount={
+                            followingCount || 0
+                        }
+                        initialFollowing={
+                            initialFollowing
+                        }
+                    />
 
                     {/* POST COUNT */}
 
