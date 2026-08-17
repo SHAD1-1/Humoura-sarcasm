@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-
 export default async function ProfilePage() {
     const supabase = await createClient();
 
@@ -41,12 +40,20 @@ export default async function ProfilePage() {
             <div className="mx-auto w-full max-w-2xl border-x border-white/10">
 
                 {/* Header */}
-                <header className="border-b border-white/10 px-6 py-4">
-                    <h1 className="text-xl font-bold">
-                        Profile
-                    </h1>
-                </header>
+                <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="text-white/50 transition hover:text-white"
+                        >
+                            ← Home
+                        </Link>
 
+                        <h1 className="text-xl font-bold">
+                            Profile
+                        </h1>
+                    </div>
+                </header>
                 {/* Profile */}
                 <section className="px-6 py-8">
 

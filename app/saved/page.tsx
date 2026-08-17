@@ -270,9 +270,18 @@ export default function SavedPage() {
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-                    <h1 className="text-xl font-bold">
-                        Saved
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="text-white/50 transition hover:text-white"
+                        >
+                            ← Home
+                        </Link>
+
+                        <h1 className="text-xl font-bold">
+                            Saved
+                        </h1>
+                    </div>
                 </header>
 
                 {/* EMPTY STATE */}
