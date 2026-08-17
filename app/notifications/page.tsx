@@ -143,9 +143,18 @@ export default async function NotificationsPage() {
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-                    <h1 className="text-xl font-bold">
-                        Notifications
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="text-white/50 hover:text-white"
+                        >
+                            ← Home
+                        </Link>
+
+                        <h1 className="text-xl font-bold">
+                            Notifications
+                        </h1>
+                    </div>
                 </header>
 
                 {/* EMPTY STATE */}
@@ -210,8 +219,8 @@ export default async function NotificationsPage() {
                                             : "/notifications"
                                     }
                                     className={`flex gap-3 border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03] ${!notification.read
-                                            ? "bg-white/[0.03]"
-                                            : ""
+                                        ? "bg-white/[0.03]"
+                                        : ""
                                         }`}
                                 >
                                     {/* AVATAR */}

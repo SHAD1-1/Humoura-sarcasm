@@ -253,15 +253,28 @@ const ExplorePage = () => {
         return (
             <main className="min-h-screen bg-black text-white">
                 <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
-                    <header className="border-b border-white/10 px-6 py-4">
-                        <h1 className="text-xl font-bold">
-                            Explore
-                        </h1>
+
+                    <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
+
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/"
+                                className="text-white/50 transition hover:text-white"
+                            >
+                                ← Home
+                            </Link>
+
+                            <h1 className="text-xl font-bold">
+                                Explore
+                            </h1>
+                        </div>
+
                     </header>
 
                     <div className="px-6 py-10 text-center text-white/50">
                         Loading Explore...
                     </div>
+
                 </div>
             </main>
         );
@@ -275,15 +288,28 @@ const ExplorePage = () => {
         return (
             <main className="min-h-screen bg-black text-white">
                 <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
-                    <header className="border-b border-white/10 px-6 py-4">
-                        <h1 className="text-xl font-bold">
-                            Explore
-                        </h1>
+
+                    <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
+
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/"
+                                className="text-white/50 transition hover:text-white"
+                            >
+                                ← Home
+                            </Link>
+
+                            <h1 className="text-xl font-bold">
+                                Explore
+                            </h1>
+                        </div>
+
                     </header>
 
                     <div className="px-6 py-10 text-center text-red-400">
                         {error}
                     </div>
+
                 </div>
             </main>
         );
@@ -300,13 +326,26 @@ const ExplorePage = () => {
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-                    <h1 className="text-xl font-bold">
-                        Explore
-                    </h1>
+
+                    <div className="flex items-center gap-4">
+
+                        <Link
+                            href="/"
+                            className="text-white/50 transition hover:text-white"
+                        >
+                            ← Home
+                        </Link>
+
+                        <h1 className="text-xl font-bold">
+                            Explore
+                        </h1>
+
+                    </div>
 
                     {/* SEARCH */}
 
                     <div className="mt-4">
+
                         <input
                             type="text"
                             value={search}
@@ -318,7 +357,9 @@ const ExplorePage = () => {
                             placeholder="🔍 Search posts or users..."
                             className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
                         />
+
                     </div>
+
                 </header>
 
                 {/* ======================================
@@ -331,6 +372,7 @@ const ExplorePage = () => {
                         {/* PEOPLE */}
 
                         <section>
+
                             <div className="border-b border-white/10 px-6 py-4">
                                 <h2 className="font-semibold">
                                     People
@@ -345,13 +387,15 @@ const ExplorePage = () => {
                                 profiles.map(
                                     (profile) => (
                                         <Link
-                                            key={profile.id}
+                                            key={
+                                                profile.id
+                                            }
                                             href={`/profile/${profile.id}`}
                                             className="flex items-center gap-3 border-b border-white/10 px-6 py-4 transition hover:bg-white/[0.03]"
                                         >
-                                            {/* AVATAR */}
 
                                             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+
                                                 {profile.avatar_url ? (
                                                     <img
                                                         src={
@@ -373,11 +417,11 @@ const ExplorePage = () => {
                                                         .toUpperCase() ||
                                                     "U"
                                                 )}
+
                                             </div>
 
-                                            {/* USER INFO */}
-
                                             <div className="min-w-0">
+
                                                 <p className="truncate font-semibold">
                                                     {profile.full_name ||
                                                         "User"}
@@ -388,16 +432,20 @@ const ExplorePage = () => {
                                                     {profile.username ||
                                                         "username"}
                                                 </p>
+
                                             </div>
+
                                         </Link>
                                     )
                                 )
                             )}
+
                         </section>
 
                         {/* POSTS */}
 
                         <section>
+
                             <div className="border-b border-white/10 px-6 py-4">
                                 <h2 className="font-semibold">
                                     Posts
@@ -416,19 +464,21 @@ const ExplorePage = () => {
                                 memes.map(
                                     (meme) => (
                                         <Link
-                                            key={meme.id}
+                                            key={
+                                                meme.id
+                                            }
                                             href={`/memes/${meme.id}`}
                                             className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
                                         >
-                                            {/* AUTHOR */}
 
                                             <div className="flex items-center gap-3">
+
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
+
                                                     {meme.profile?.avatar_url ? (
                                                         <img
                                                             src={
-                                                                meme.profile
-                                                                    .avatar_url
+                                                                meme.profile.avatar_url
                                                             }
                                                             alt="Avatar"
                                                             className="h-full w-full object-cover"
@@ -446,9 +496,11 @@ const ExplorePage = () => {
                                                             .toUpperCase() ||
                                                         "U"
                                                     )}
+
                                                 </div>
 
                                                 <div className="min-w-0">
+
                                                     <p className="truncate font-semibold">
                                                         {meme.profile?.full_name ||
                                                             "User"}
@@ -459,18 +511,16 @@ const ExplorePage = () => {
                                                         {meme.profile?.username ||
                                                             "username"}
                                                     </p>
-                                                </div>
-                                            </div>
 
-                                            {/* POST TEXT */}
+                                                </div>
+
+                                            </div>
 
                                             {meme.content && (
                                                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                                                     {meme.content}
                                                 </p>
                                             )}
-
-                                            {/* IMAGE */}
 
                                             {meme.image_url && (
                                                 <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -484,25 +534,28 @@ const ExplorePage = () => {
                                                 </div>
                                             )}
 
-                                            {/* TIME */}
-
                                             <p className="mt-3 text-xs text-white/30">
                                                 {new Date(
                                                     meme.created_at
                                                 ).toLocaleString()}
                                             </p>
+
                                         </Link>
                                     )
                                 )
                             )}
+
                         </section>
+
                     </div>
                 ) : (
+
                     /* ======================================
                        RECENT POSTS
                     ====================================== */
 
                     <section>
+
                         <div className="border-b border-white/10 px-6 py-4">
                             <h2 className="font-semibold">
                                 Recent Posts
@@ -517,19 +570,21 @@ const ExplorePage = () => {
                             memes.map(
                                 (meme) => (
                                     <Link
-                                        key={meme.id}
+                                        key={
+                                            meme.id
+                                        }
                                         href={`/memes/${meme.id}`}
                                         className="block border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
                                     >
-                                        {/* AUTHOR */}
 
                                         <div className="flex items-center gap-3">
+
                                             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
+
                                                 {meme.profile?.avatar_url ? (
                                                     <img
                                                         src={
-                                                            meme.profile
-                                                                .avatar_url
+                                                            meme.profile.avatar_url
                                                         }
                                                         alt="Avatar"
                                                         className="h-full w-full object-cover"
@@ -547,9 +602,11 @@ const ExplorePage = () => {
                                                         .toUpperCase() ||
                                                     "U"
                                                 )}
+
                                             </div>
 
                                             <div className="min-w-0">
+
                                                 <p className="truncate font-semibold">
                                                     {meme.profile?.full_name ||
                                                         "User"}
@@ -560,18 +617,16 @@ const ExplorePage = () => {
                                                     {meme.profile?.username ||
                                                         "username"}
                                                 </p>
-                                            </div>
-                                        </div>
 
-                                        {/* TEXT */}
+                                            </div>
+
+                                        </div>
 
                                         {meme.content && (
                                             <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                                                 {meme.content}
                                             </p>
                                         )}
-
-                                        {/* IMAGE */}
 
                                         {meme.image_url && (
                                             <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -585,19 +640,20 @@ const ExplorePage = () => {
                                             </div>
                                         )}
 
-                                        {/* TIME */}
-
                                         <p className="mt-3 text-xs text-white/30">
                                             {new Date(
                                                 meme.created_at
                                             ).toLocaleString()}
                                         </p>
+
                                     </Link>
                                 )
                             )
                         )}
+
                     </section>
                 )}
+
             </div>
         </main>
     );
