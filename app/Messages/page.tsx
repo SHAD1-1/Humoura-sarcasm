@@ -17,8 +17,19 @@ type Message = {
     read: boolean;
 };
 
+type Conversation = {
+    userId: string;
+    profile: Profile | null;
+    lastMessage: Message | null;
+    unread: boolean;
+};
+
 export default async function MessagesPage() {
     const supabase = await createClient();
+
+    // ========================================
+    // CURRENT USER
+    // ========================================
 
     const {
         data: { user },
@@ -33,17 +44,93 @@ export default async function MessagesPage() {
                     </h1>
 
                     <Link
-                        href="/login"
+                        href="/"
                         className="mt-4 inline-block rounded-full bg-white px-5 py-2 font-semibold text-black"
                     >
-                        Log in
+                        Go to Home
                     </Link>
                 </div>
             </main>
         );
     }
 
-    // Get messages involving this user
+    // ========================================
+    // GET PEOPLE I FOLLOW
+    // ========================================
+
+    const {
+        data: followData,
+        error: followError,
+    } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq(
+            "follower_id",
+            user.id
+        );
+
+    if (followError) {
+        console.error(
+            "FOLLOWING USERS ERROR:",
+            {
+                message: followError.message,
+                details: followError.details,
+                hint: followError.hint,
+                code: followError.code,
+            }
+        );
+    }
+
+    const followedUserIds =
+        (followData || []).map(
+            (follow) =>
+                follow.following_id
+        );
+
+    // ========================================
+    // GET FOLLOWED USER PROFILES
+    // ========================================
+
+    let followedProfiles: Profile[] = [];
+
+    if (followedUserIds.length > 0) {
+        const {
+            data: profileData,
+            error: profileError,
+        } = await supabase
+            .from("profiles")
+            .select(
+                "id, username, full_name, avatar_url"
+            )
+            .in(
+                "id",
+                followedUserIds
+            );
+
+        if (profileError) {
+            console.error(
+                "FOLLOWED PROFILE ERROR:",
+                {
+                    message:
+                        profileError.message,
+                    details:
+                        profileError.details,
+                    hint:
+                        profileError.hint,
+                    code:
+                        profileError.code,
+                }
+            );
+        }
+
+        followedProfiles =
+            profileData || [];
+    }
+
+    // ========================================
+    // GET EXISTING MESSAGES
+    // ========================================
+
     const {
         data: messageData,
         error: messageError,
@@ -63,10 +150,14 @@ export default async function MessagesPage() {
         console.error(
             "INBOX MESSAGE ERROR:",
             {
-                message: messageError.message,
-                details: messageError.details,
-                hint: messageError.hint,
-                code: messageError.code,
+                message:
+                    messageError.message,
+                details:
+                    messageError.details,
+                hint:
+                    messageError.hint,
+                code:
+                    messageError.code,
             }
         );
     }
@@ -74,20 +165,27 @@ export default async function MessagesPage() {
     const messages: Message[] =
         messageData || [];
 
-    // Find the other user in every message
-    const otherUserIds = [
+    // ========================================
+    // GET USERS FROM EXISTING CONVERSATIONS
+    // ========================================
+
+    const conversationUserIds = [
         ...new Set(
             messages.map((message) =>
-                message.sender_id === user.id
+                message.sender_id ===
+                    user.id
                     ? message.recipient_id
                     : message.sender_id
             )
         ),
     ];
 
-    let profiles: Profile[] = [];
+    let conversationProfiles: Profile[] =
+        [];
 
-    if (otherUserIds.length > 0) {
+    if (
+        conversationUserIds.length > 0
+    ) {
         const {
             data: profileData,
             error: profileError,
@@ -96,69 +194,145 @@ export default async function MessagesPage() {
             .select(
                 "id, username, full_name, avatar_url"
             )
-            .in("id", otherUserIds);
+            .in(
+                "id",
+                conversationUserIds
+            );
 
         if (profileError) {
             console.error(
-                "INBOX PROFILE ERROR:",
+                "CONVERSATION PROFILE ERROR:",
                 profileError
             );
         }
 
-        profiles =
+        conversationProfiles =
             profileData || [];
     }
 
-    // Build one row per conversation
-    const conversations = new Map<
+    // ========================================
+    // BUILD CONVERSATION MAP
+    // ========================================
+
+    const conversationMap = new Map<
         string,
-        {
-            otherUser: Profile | null;
-            lastMessage: Message;
-            unread: boolean;
-        }
+        Conversation
     >();
 
     for (const message of messages) {
         const otherUserId =
-            message.sender_id === user.id
+            message.sender_id ===
+                user.id
                 ? message.recipient_id
                 : message.sender_id;
 
-        if (!conversations.has(otherUserId)) {
-            const otherUser =
-                profiles.find(
-                    (profile) =>
-                        profile.id ===
-                        otherUserId
-                ) || null;
+        if (
+            conversationMap.has(
+                otherUserId
+            )
+        ) {
+            continue;
+        }
 
-            conversations.set(
-                otherUserId,
+        const profile =
+            conversationProfiles.find(
+                (item) =>
+                    item.id ===
+                    otherUserId
+            ) || null;
+
+        conversationMap.set(
+            otherUserId,
+            {
+                userId: otherUserId,
+                profile,
+                lastMessage: message,
+                unread:
+                    message.recipient_id ===
+                    user.id &&
+                    !message.read,
+            }
+        );
+    }
+
+    // ========================================
+    // ADD PEOPLE I FOLLOW
+    // ========================================
+    //
+    // If someone you follow has never been
+    // messaged, add them with no last message.
+
+    for (const profile of followedProfiles) {
+        if (
+            !conversationMap.has(
+                profile.id
+            )
+        ) {
+            conversationMap.set(
+                profile.id,
                 {
-                    otherUser,
-                    lastMessage: message,
-                    unread:
-                        message.recipient_id ===
-                        user.id &&
-                        !message.read,
+                    userId: profile.id,
+                    profile,
+                    lastMessage: null,
+                    unread: false,
                 }
             );
         }
     }
 
+    // ========================================
+    // FINAL LIST
+    // ========================================
+
     const conversationList =
         Array.from(
-            conversations.entries()
-        ).map(
-            ([
-                otherUserId,
-                conversation,
-            ]) => ({
-                otherUserId,
-                ...conversation,
-            })
+            conversationMap.values()
         );
+
+    // Put active conversations first,
+    // then people with no messages.
+
+    conversationList.sort(
+        (a, b) => {
+            if (
+                a.lastMessage &&
+                b.lastMessage
+            ) {
+                return (
+                    new Date(
+                        b.lastMessage.created_at
+                    ).getTime() -
+                    new Date(
+                        a.lastMessage.created_at
+                    ).getTime()
+                );
+            }
+
+            if (
+                a.lastMessage &&
+                !b.lastMessage
+            ) {
+                return -1;
+            }
+
+            if (
+                !a.lastMessage &&
+                b.lastMessage
+            ) {
+                return 1;
+            }
+
+            return (
+                a.profile?.full_name ||
+                a.profile?.username ||
+                ""
+            ).localeCompare(
+                b.profile?.full_name ||
+                b.profile?.username ||
+                ""
+            );
+        }
+    );
 
     return (
         <main className="min-h-screen bg-black text-white">
@@ -167,49 +341,62 @@ export default async function MessagesPage() {
                 {/* HEADER */}
 
                 <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-                    <h1 className="text-xl font-bold">
-                        Messages
-                    </h1>
+                    <div className="flex items-center gap-4">
+
+                        <Link
+                            href="/"
+                            className="text-white/50 transition hover:text-white"
+                        >
+                            ← Home
+                        </Link>
+
+                        <h1 className="text-xl font-bold">
+                            Messages
+                        </h1>
+
+                    </div>
                 </header>
 
-                {/* INBOX */}
+                {/* EMPTY STATE */}
 
-                {conversationList.length ===
-                    0 ? (
-                    <div className="px-6 py-12 text-center text-white/40">
+                {conversationList.length === 0 ? (
+                    <div className="px-6 py-16 text-center">
 
-                        <p className="text-lg">
-                            No messages yet.
+                        <p className="text-lg font-semibold">
+                            No people to message yet.
                         </p>
 
-                        <p className="mt-2 text-sm">
-                            Start a conversation
-                            with someone.
+                        <p className="mt-2 text-sm text-white/40">
+                            Follow someone to start a conversation.
                         </p>
+
+                        <Link
+                            href="/explore"
+                            className="mt-5 inline-block rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+                        >
+                            Explore people
+                        </Link>
 
                     </div>
                 ) : (
                     <div>
+
                         {conversationList.map(
-                            (
-                                conversation
-                            ) => {
+                            (conversation) => {
                                 const profile =
-                                    conversation.otherUser;
+                                    conversation.profile;
 
                                 return (
                                     <Link
                                         key={
-                                            conversation.otherUserId
+                                            conversation.userId
                                         }
-                                        href={`/messages/${conversation.otherUserId}`}
+                                        href={`/messages/${conversation.userId}`}
                                         className="flex items-center gap-3 border-b border-white/10 px-6 py-4 transition hover:bg-white/[0.03]"
                                     >
-
                                         {/* AVATAR */}
 
                                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
-
                                             {profile?.avatar_url ? (
                                                 <img
                                                     src={
@@ -231,10 +418,9 @@ export default async function MessagesPage() {
                                                     .toUpperCase() ||
                                                 "U"
                                             )}
-
                                         </div>
 
-                                        {/* USER + MESSAGE */}
+                                        {/* CONTENT */}
 
                                         <div className="min-w-0 flex-1">
 
@@ -245,13 +431,15 @@ export default async function MessagesPage() {
                                                         "User"}
                                                 </p>
 
-                                                <p className="shrink-0 text-xs text-white/30">
-                                                    {new Date(
-                                                        conversation
-                                                            .lastMessage
-                                                            .created_at
-                                                    ).toLocaleDateString()}
-                                                </p>
+                                                {conversation.lastMessage && (
+                                                    <p className="shrink-0 text-xs text-white/30">
+                                                        {new Date(
+                                                            conversation
+                                                                .lastMessage
+                                                                .created_at
+                                                        ).toLocaleDateString()}
+                                                    </p>
+                                                )}
 
                                             </div>
 
@@ -261,24 +449,31 @@ export default async function MessagesPage() {
                                                     "username"}
                                             </p>
 
-                                            <p
-                                                className={`mt-1 truncate text-sm ${conversation.unread
+                                            {conversation.lastMessage ? (
+                                                <p
+                                                    className={`mt-1 truncate text-sm ${conversation.unread
                                                         ? "font-semibold text-white"
                                                         : "text-white/40"
-                                                    }`}
-                                            >
-                                                {conversation
-                                                    .lastMessage
-                                                    .sender_id ===
-                                                    user.id
-                                                    ? "You: "
-                                                    : ""}
-                                                {
-                                                    conversation
+                                                        }`}
+                                                >
+                                                    {conversation
                                                         .lastMessage
-                                                        .text
-                                                }
-                                            </p>
+                                                        .sender_id ===
+                                                        user.id
+                                                        ? "You: "
+                                                        : ""}
+
+                                                    {
+                                                        conversation
+                                                            .lastMessage
+                                                            .text
+                                                    }
+                                                </p>
+                                            ) : (
+                                                <p className="mt-1 text-sm text-white/30">
+                                                    Start a conversation
+                                                </p>
+                                            )}
 
                                         </div>
 
@@ -292,6 +487,7 @@ export default async function MessagesPage() {
                                 );
                             }
                         )}
+
                     </div>
                 )}
 
