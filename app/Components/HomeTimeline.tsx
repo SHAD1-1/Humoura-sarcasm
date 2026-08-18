@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ReplyThread from "./ReplyThread";
@@ -52,15 +53,18 @@ const HomeTimeline = () => {
     const [saved, setSaved] =
         useState<Record<string, SaveInfo>>({});
 
-    const [openReplyBox, setOpenReplyBox] =
+    const [openCommentBox, setOpenCommentBox] =
         useState<string | null>(null);
-    const [replyText, setReplyText] =
+
+    const [commentText, setCommentText] =
         useState("");
-    const [submittingReply, setSubmittingReply] =
+
+    const [submittingComment, setSubmittingComment] =
         useState(false);
 
     const [loading, setLoading] =
         useState(true);
+
     const [error, setError] =
         useState("");
 
@@ -73,18 +77,26 @@ const HomeTimeline = () => {
             setLoading(true);
             setError("");
 
-            // GET USER
+            // ========================================
+            // GET CURRENT USER
+            // ========================================
+
             const {
                 data: { user },
                 error: userError,
-            } = await supabase.auth.getUser();
+            } =
+                await supabase.auth.getUser();
 
             if (userError) {
                 console.error(
                     "USER ERROR:",
                     userError
                 );
-                setError(userError.message);
+
+                setError(
+                    userError.message
+                );
+
                 setLoading(false);
                 return;
             }
@@ -93,6 +105,7 @@ const HomeTimeline = () => {
                 setError(
                     "Please log in to view posts."
                 );
+
                 setLoading(false);
                 return;
             }
@@ -111,19 +124,27 @@ const HomeTimeline = () => {
                 )
                 .order("created_at", {
                     ascending: false,
-                });
+                })
+                .limit(50);
 
             if (memeError) {
                 console.error(
                     "MEME ERROR:",
                     memeError
                 );
-                setError(memeError.message);
+
+                setError(
+                    memeError.message
+                );
+
                 setLoading(false);
                 return;
             }
 
-            if (!memeData || memeData.length === 0) {
+            if (
+                !memeData ||
+                memeData.length === 0
+            ) {
                 setMemes([]);
                 setLikes({});
                 setReplies({});
@@ -140,7 +161,8 @@ const HomeTimeline = () => {
             const authorIds = [
                 ...new Set(
                     memeData.map(
-                        (meme) => meme.author_id
+                        (meme) =>
+                            meme.author_id
                     )
                 ),
             ];
@@ -153,17 +175,28 @@ const HomeTimeline = () => {
                 .select(
                     "id, username, full_name, avatar_url"
                 )
-                .in("id", authorIds);
+                .in(
+                    "id",
+                    authorIds
+                );
 
             if (profileError) {
                 console.error(
                     "PROFILE ERROR:",
                     profileError
                 );
-                setError(profileError.message);
+
+                setError(
+                    profileError.message
+                );
+
                 setLoading(false);
                 return;
             }
+
+            // ========================================
+            // BUILD POSTS
+            // ========================================
 
             const posts: Meme[] =
                 memeData.map((meme) => {
@@ -187,7 +220,36 @@ const HomeTimeline = () => {
                     };
                 });
 
-            setMemes(posts);
+            // ========================================
+            // SHUFFLE FEED
+            // ========================================
+
+            const shuffledPosts = [
+                ...posts,
+            ];
+
+            for (
+                let i =
+                    shuffledPosts.length -
+                    1;
+                i > 0;
+                i--
+            ) {
+                const j = Math.floor(
+                    Math.random() *
+                    (i + 1)
+                );
+
+                [
+                    shuffledPosts[i],
+                    shuffledPosts[j],
+                ] = [
+                        shuffledPosts[j],
+                        shuffledPosts[i],
+                    ];
+            }
+
+            setMemes(shuffledPosts);
 
             // ========================================
             // GET LIKES
@@ -218,7 +280,9 @@ const HomeTimeline = () => {
                 error: savedError,
             } = await supabase
                 .from("saved_memes")
-                .select("meme_id")
+                .select(
+                    "meme_id"
+                )
                 .eq(
                     "user_id",
                     user.id
@@ -241,45 +305,47 @@ const HomeTimeline = () => {
                 SaveInfo
             > = {};
 
-            posts.forEach((meme) => {
-                const memeLikes =
-                    likeData?.filter(
-                        (like) =>
-                            like.meme_id ===
-                            meme.id
-                    ) || [];
-
-                likeInfo[meme.id] = {
-                    count:
-                        memeLikes.length,
-
-                    liked:
-                        memeLikes.some(
+            shuffledPosts.forEach(
+                (meme) => {
+                    const memeLikes =
+                        likeData?.filter(
                             (like) =>
-                                like.user_id ===
-                                user.id
-                        ),
-                };
-
-                savedInfo[meme.id] = {
-                    saved:
-                        savedData?.some(
-                            (item) =>
-                                item.meme_id ===
+                                like.meme_id ===
                                 meme.id
-                        ) ?? false,
-                };
-            });
+                        ) || [];
+
+                    likeInfo[meme.id] = {
+                        count:
+                            memeLikes.length,
+
+                        liked:
+                            memeLikes.some(
+                                (like) =>
+                                    like.user_id ===
+                                    user.id
+                            ),
+                    };
+
+                    savedInfo[meme.id] = {
+                        saved:
+                            savedData?.some(
+                                (item) =>
+                                    item.meme_id ===
+                                    meme.id
+                            ) ?? false,
+                    };
+                }
+            );
 
             setLikes(likeInfo);
             setSaved(savedInfo);
 
             // ========================================
-            // GET REPLIES
+            // GET REPLIES / COMMENTS
             // ========================================
 
             const memeIds =
-                posts.map(
+                shuffledPosts.map(
                     (meme) => meme.id
                 );
 
@@ -326,17 +392,20 @@ const HomeTimeline = () => {
                     data: replyProfiles,
                     error:
                     replyProfileError,
-                } = await supabase
-                    .from("profiles")
-                    .select(
-                        "id, username, full_name, avatar_url"
-                    )
-                    .in(
-                        "id",
-                        replyUserIds
-                    );
+                } =
+                    await supabase
+                        .from("profiles")
+                        .select(
+                            "id, username, full_name, avatar_url"
+                        )
+                        .in(
+                            "id",
+                            replyUserIds
+                        );
 
-                if (replyProfileError) {
+                if (
+                    replyProfileError
+                ) {
                     console.error(
                         "REPLY PROFILE ERROR:",
                         replyProfileError
@@ -359,7 +428,9 @@ const HomeTimeline = () => {
 
                             profile:
                                 replyProfiles?.find(
-                                    (profile) =>
+                                    (
+                                        profile
+                                    ) =>
                                         profile.id ===
                                         reply.user_id
                                 ) || null,
@@ -385,7 +456,9 @@ const HomeTimeline = () => {
 
                         groupedReplies[
                             reply.meme_id
-                        ].push(reply);
+                        ].push(
+                            reply
+                        );
                     }
                 );
 
@@ -398,23 +471,32 @@ const HomeTimeline = () => {
                     number
                 > = {};
 
-                posts.forEach((meme) => {
-                    counts[meme.id] =
-                        groupedReplies[
-                            meme.id
-                        ]?.length || 0;
-                });
+                shuffledPosts.forEach(
+                    (meme) => {
+                        counts[meme.id] =
+                            groupedReplies[
+                                meme.id
+                            ]?.length ||
+                            0;
+                    }
+                );
 
-                setReplyCounts(counts);
+                setReplyCounts(
+                    counts
+                );
             } else {
                 const emptyCounts: Record<
                     string,
                     number
                 > = {};
 
-                posts.forEach((meme) => {
-                    emptyCounts[meme.id] = 0;
-                });
+                shuffledPosts.forEach(
+                    (meme) => {
+                        emptyCounts[
+                            meme.id
+                        ] = 0;
+                    }
+                );
 
                 setReplies({});
                 setReplyCounts(
@@ -437,7 +519,8 @@ const HomeTimeline = () => {
     ) {
         const {
             data: { user },
-        } = await supabase.auth.getUser();
+        } =
+            await supabase.auth.getUser();
 
         if (!user) return;
 
@@ -447,7 +530,8 @@ const HomeTimeline = () => {
         if (!currentLike) return;
 
         const meme = memes.find(
-            (item) => item.id === memeId
+            (item) =>
+                item.id === memeId
         );
 
         if (!meme) return;
@@ -457,34 +541,44 @@ const HomeTimeline = () => {
         };
 
         // Optimistic update
-        setLikes((previous) => ({
-            ...previous,
+        setLikes(
+            (previous) => ({
+                ...previous,
 
-            [memeId]: {
-                count:
-                    currentLike.liked
-                        ? currentLike.count - 1
-                        : currentLike.count + 1,
+                [memeId]: {
+                    count:
+                        currentLike.liked
+                            ? currentLike.count -
+                            1
+                            : currentLike.count +
+                            1,
 
-                liked:
-                    !currentLike.liked,
-            },
-        }));
+                    liked:
+                        !currentLike.liked,
+                },
+            })
+        );
 
+        // ========================================
         // UNLIKE
-        if (currentLike.liked) {
-            const { error } =
-                await supabase
-                    .from("meme_likes")
-                    .delete()
-                    .eq(
-                        "meme_id",
-                        memeId
-                    )
-                    .eq(
-                        "user_id",
-                        user.id
-                    );
+        // ========================================
+
+        if (
+            currentLike.liked
+        ) {
+            const {
+                error,
+            } = await supabase
+                .from("meme_likes")
+                .delete()
+                .eq(
+                    "meme_id",
+                    memeId
+                )
+                .eq(
+                    "user_id",
+                    user.id
+                );
 
             if (error) {
                 console.error(
@@ -503,6 +597,7 @@ const HomeTimeline = () => {
                 return;
             }
 
+            // Remove notification
             if (
                 meme.author_id !==
                 user.id
@@ -533,16 +628,18 @@ const HomeTimeline = () => {
             return;
         }
 
+        // ========================================
         // LIKE
-        const { error } =
-            await supabase
-                .from(
-                    "meme_likes"
-                )
-                .insert({
-                    meme_id: memeId,
-                    user_id: user.id,
-                });
+        // ========================================
+
+        const {
+            error,
+        } = await supabase
+            .from("meme_likes")
+            .insert({
+                meme_id: memeId,
+                user_id: user.id,
+            });
 
         if (error) {
             console.error(
@@ -561,7 +658,10 @@ const HomeTimeline = () => {
             return;
         }
 
-        // Notification
+        // ========================================
+        // LIKE NOTIFICATION
+        // ========================================
+
         if (
             meme.author_id !==
             user.id
@@ -616,34 +716,42 @@ const HomeTimeline = () => {
 
         if (!currentSave) return;
 
+        // ========================================
         // UNSAVE
-        if (currentSave.saved) {
-            const { error } =
-                await supabase
-                    .from(
-                        "saved_memes"
-                    )
-                    .delete()
-                    .eq(
-                        "meme_id",
-                        memeId
-                    )
-                    .eq(
-                        "user_id",
-                        user.id
-                    );
+        // ========================================
+
+        if (
+            currentSave.saved
+        ) {
+            const {
+                error,
+            } = await supabase
+                .from(
+                    "saved_memes"
+                )
+                .delete()
+                .eq(
+                    "meme_id",
+                    memeId
+                )
+                .eq(
+                    "user_id",
+                    user.id
+                );
 
             if (error) {
                 console.error(
                     "UNSAVE ERROR:",
                     error
                 );
+
                 return;
             }
 
             setSaved(
                 (previous) => ({
                     ...previous,
+
                     [memeId]: {
                         saved: false,
                     },
@@ -653,34 +761,276 @@ const HomeTimeline = () => {
             return;
         }
 
+        // ========================================
         // SAVE
-        const { error } =
-            await supabase
-                .from(
-                    "saved_memes"
-                )
-                .insert({
-                    meme_id: memeId,
-                    user_id:
-                        user.id,
-                });
+        // ========================================
+
+        const {
+            error,
+        } = await supabase
+            .from(
+                "saved_memes"
+            )
+            .insert({
+                meme_id: memeId,
+                user_id: user.id,
+            });
 
         if (error) {
             console.error(
                 "SAVE ERROR:",
                 error
             );
+
             return;
         }
 
         setSaved(
             (previous) => ({
                 ...previous,
+
                 [memeId]: {
                     saved: true,
                 },
             })
         );
+    }
+
+    // ==========================================
+    // ADD TOP-LEVEL COMMENT
+    // ==========================================
+
+    async function handleComment(
+        memeId: string
+    ) {
+        const text =
+            commentText.trim();
+
+        if (!text) return;
+
+        setSubmittingComment(true);
+
+        try {
+            const {
+                data: { user },
+                error: userError,
+            } =
+                await supabase.auth.getUser();
+
+            if (userError) {
+                console.error(
+                    "COMMENT USER ERROR:",
+                    userError
+                );
+
+                return;
+            }
+
+            if (!user) {
+                return;
+            }
+
+            const meme = memes.find(
+                (item) =>
+                    item.id ===
+                    memeId
+            );
+
+            if (!meme) {
+                return;
+            }
+
+            // ========================================
+            // INSERT COMMENT
+            // ========================================
+
+            const {
+                data: insertedReply,
+                error: insertError,
+            } =
+                await supabase
+                    .from("replies")
+                    .insert({
+                        text,
+                        user_id:
+                            user.id,
+                        meme_id:
+                            memeId,
+                        reply_id:
+                            null,
+                    })
+                    .select(
+                        "id, text, user_id, meme_id, reply_id, created_at"
+                    )
+                    .single();
+
+            if (
+                insertError
+            ) {
+                console.error(
+                    "COMMENT INSERT ERROR:",
+                    {
+                        message:
+                            insertError.message,
+                        details:
+                            insertError.details,
+                        hint:
+                            insertError.hint,
+                        code:
+                            insertError.code,
+                    }
+                );
+
+                return;
+            }
+
+            // ========================================
+            // GET CURRENT USER PROFILE
+            // ========================================
+
+            const {
+                data: profile,
+                error: profileError,
+            } =
+                await supabase
+                    .from("profiles")
+                    .select(
+                        "id, username, full_name, avatar_url"
+                    )
+                    .eq(
+                        "id",
+                        user.id
+                    )
+                    .single();
+
+            if (profileError) {
+                console.error(
+                    "COMMENT PROFILE ERROR:",
+                    profileError
+                );
+            }
+
+            if (
+                !insertedReply
+            ) {
+                return;
+            }
+
+            const newReply: Reply =
+            {
+                id:
+                    insertedReply.id,
+
+                text:
+                    insertedReply.text,
+
+                user_id:
+                    insertedReply.user_id,
+
+                meme_id:
+                    insertedReply.meme_id,
+
+                reply_id:
+                    insertedReply.reply_id,
+
+                created_at:
+                    insertedReply.created_at,
+
+                profile:
+                    profile ||
+                    null,
+            };
+
+            // ========================================
+            // ADD COMMENT TO SCREEN
+            // ========================================
+
+            setReplies(
+                (previous) => ({
+                    ...previous,
+
+                    [memeId]: [
+                        ...(previous[
+                            memeId
+                        ] || []),
+
+                        newReply,
+                    ],
+                })
+            );
+
+            setReplyCounts(
+                (previous) => ({
+                    ...previous,
+
+                    [memeId]:
+                        (previous[
+                            memeId
+                        ] || 0) + 1,
+                })
+            );
+
+            // ========================================
+            // COMMENT NOTIFICATION
+            // ========================================
+
+            if (
+                meme.author_id !==
+                user.id
+            ) {
+                const {
+                    error:
+                    notificationError,
+                } =
+                    await supabase
+                        .from(
+                            "notifications"
+                        )
+                        .insert({
+                            recipient_id:
+                                meme.author_id,
+
+                            actor_id:
+                                user.id,
+
+                            type: "reply",
+
+                            meme_id:
+                                memeId,
+
+                            reply_id:
+                                insertedReply.id,
+                        });
+
+                if (
+                    notificationError
+                ) {
+                    console.error(
+                        "COMMENT NOTIFICATION ERROR:",
+                        notificationError
+                    );
+                }
+            }
+
+            // ========================================
+            // CLEAR BOX
+            // ========================================
+
+            setCommentText("");
+
+            setOpenCommentBox(
+                null
+            );
+        } catch (error) {
+            console.error(
+                "UNEXPECTED COMMENT ERROR:",
+                error
+            );
+        } finally {
+            setSubmittingComment(
+                false
+            );
+        }
     }
 
     // ==========================================
@@ -711,10 +1061,13 @@ const HomeTimeline = () => {
     // NO POSTS
     // ==========================================
 
-    if (memes.length === 0) {
+    if (
+        memes.length === 0
+    ) {
         return (
             <div className="px-6 py-10 text-center text-white/50">
-                No posts yet. Be the first to post! 👀
+                No posts yet. Be the first
+                to post! 👀
             </div>
         );
     }
@@ -741,13 +1094,18 @@ const HomeTimeline = () => {
                         key={meme.id}
                         className="border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
                     >
+
                         {/* USER */}
 
-                        <div className="flex items-center gap-3">
+                        <Link
+                            href={`/profile/${meme.author_id}`}
+                            className="flex w-fit items-center gap-3 rounded-xl transition hover:opacity-80"
+                        >
 
                             {/* AVATAR */}
 
                             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+
                                 {profile?.avatar_url ? (
                                     <img
                                         src={
@@ -769,6 +1127,7 @@ const HomeTimeline = () => {
                                         .toUpperCase() ||
                                     "U"
                                 )}
+
                             </div>
 
                             {/* USER INFO */}
@@ -798,7 +1157,7 @@ const HomeTimeline = () => {
 
                             </div>
 
-                        </div>
+                        </Link>
 
                         {/* TEXT */}
 
@@ -836,8 +1195,8 @@ const HomeTimeline = () => {
                                     )
                                 }
                                 className={`transition ${likeInfo?.liked
-                                    ? "text-red-400"
-                                    : "text-white/40 hover:text-red-400"
+                                        ? "text-red-400"
+                                        : "text-white/40 hover:text-red-400"
                                     }`}
                             >
                                 {likeInfo?.liked
@@ -847,10 +1206,33 @@ const HomeTimeline = () => {
                                     0}
                             </button>
 
-                            {/* REPLY */}
-                            <span className="text-white/40">
-                                💬 {replyCounts[meme.id] || 0}
-                            </span>
+                            {/* COMMENT */}
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setOpenCommentBox(
+                                        openCommentBox ===
+                                            meme.id
+                                            ? null
+                                            : meme.id
+                                    );
+
+                                    setCommentText(
+                                        ""
+                                    );
+                                }}
+                                className={`transition ${openCommentBox ===
+                                        meme.id
+                                        ? "text-white"
+                                        : "text-white/40 hover:text-white"
+                                    }`}
+                            >
+                                💬{" "}
+                                {replyCounts[
+                                    meme.id
+                                ] || 0}
+                            </button>
 
                             {/* SAVE */}
 
@@ -862,10 +1244,10 @@ const HomeTimeline = () => {
                                     )
                                 }
                                 className={`transition ${saved[
-                                    meme.id
-                                ]?.saved
-                                    ? "text-yellow-400"
-                                    : "text-white/40 hover:text-yellow-400"
+                                        meme.id
+                                    ]?.saved
+                                        ? "text-yellow-400"
+                                        : "text-white/40 hover:text-yellow-400"
                                     }`}
                             >
                                 {saved[
@@ -877,12 +1259,72 @@ const HomeTimeline = () => {
 
                         </div>
 
-                        {/* TOP LEVEL REPLY BOX */}
+                        {/* TOP-LEVEL COMMENT BOX */}
+
+                        {openCommentBox ===
+                            meme.id && (
+                                <div className="mt-4 flex gap-3">
+
+                                    <input
+                                        type="text"
+                                        value={
+                                            commentText
+                                        }
+                                        onChange={(
+                                            e
+                                        ) =>
+                                            setCommentText(
+                                                e
+                                                    .target
+                                                    .value
+                                            )
+                                        }
+                                        onKeyDown={(
+                                            e
+                                        ) => {
+                                            if (
+                                                e.key ===
+                                                "Enter" &&
+                                                !e.shiftKey
+                                            ) {
+                                                e.preventDefault();
+
+                                                handleComment(
+                                                    meme.id
+                                                );
+                                            }
+                                        }}
+                                        placeholder="Write a comment..."
+                                        className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            submittingComment ||
+                                            !commentText.trim()
+                                        }
+                                        onClick={() =>
+                                            handleComment(
+                                                meme.id
+                                            )
+                                        }
+                                        className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                        {submittingComment
+                                            ? "..."
+                                            : "Comment"}
+                                    </button>
+
+                                </div>
+                            )}
 
                         {/* COMMENTS + NESTED REPLIES */}
 
                         <ReplyThread
-                            memeId={meme.id}
+                            memeId={
+                                meme.id
+                            }
                             memeAuthorId={
                                 meme.author_id
                             }
@@ -897,12 +1339,15 @@ const HomeTimeline = () => {
                                         previous
                                     ) => ({
                                         ...previous,
-                                        [meme.id]: [
-                                            ...(previous[
-                                                meme.id
-                                            ] || []),
-                                            newReply,
-                                        ],
+
+                                        [meme.id]:
+                                            [
+                                                ...(previous[
+                                                    meme.id
+                                                ] ||
+                                                    []),
+                                                newReply,
+                                            ],
                                     })
                                 );
 
@@ -911,6 +1356,7 @@ const HomeTimeline = () => {
                                         previous
                                     ) => ({
                                         ...previous,
+
                                         [meme.id]:
                                             (
                                                 previous[

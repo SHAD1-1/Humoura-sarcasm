@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 function Home() {
   return (
     <div className="min-h-screen bg-black text-white">
-
       <div className="mx-auto flex max-w-7xl">
 
         {/* LEFT SIDEBAR */}
@@ -16,14 +15,12 @@ function Home() {
         {/* MAIN CONTENT */}
         <main className="ml-64 min-h-screen w-full max-w-2xl border-r border-white/10">
 
-          {/* HEADER */}
           <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
             <h1 className="text-xl font-bold">
               Jhakanaka Home
             </h1>
           </header>
 
-          {/* TIMELINE */}
           <HomeTimeline />
 
         </main>
@@ -32,7 +29,6 @@ function Home() {
         <RightSidebar />
 
       </div>
-
     </div>
   );
 }
@@ -44,9 +40,11 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Logged out → show auth screen at /
   if (!user) {
     return <AuthScreen />;
   }
 
+  // Logged in → show timeline
   return <Home />;
 }
