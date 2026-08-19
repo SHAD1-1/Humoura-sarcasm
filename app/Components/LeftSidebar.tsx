@@ -128,13 +128,39 @@ const LeftSidebar = async () => {
           );
         })}
       </nav>
-
-      {/* Create Meme Button */}
       <Link
         href="/create"
-        className="mt-6 block rounded-full bg-white py-3 text-center font-semibold text-black transition hover:bg-gray-200"
+        className="
+    group
+    relative
+    mt-6
+    inline-flex
+    rounded-full
+    bg-gradient-to-r
+    from-sky-300
+    via-cyan-300
+    to-blue-400
+    p-[2px]
+    pr-8
+    shadow-lg
+  "
       >
-        + Create Sarcasm
+        <span
+          className="
+      rounded-full
+      bg-slate-950
+      px-8
+      py-3
+      font-semibold
+      text-white
+      transition-transform
+      duration-500
+      ease-[cubic-bezier(0.22,1,0.36,1)]
+      group-hover:translate-x-6
+    "
+        >
+          Create Sarcasm
+        </span>
       </Link>
 
       {/* User Profile */}

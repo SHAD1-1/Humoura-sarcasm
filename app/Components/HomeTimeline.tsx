@@ -1077,7 +1077,7 @@ const HomeTimeline = () => {
     // ==========================================
 
     return (
-        <div>
+        <div className="pb-24 lg:pb-0">
             {memes.map((meme) => {
                 const profile =
                     meme.profile;
@@ -1092,15 +1092,14 @@ const HomeTimeline = () => {
                 return (
                     <article
                         key={meme.id}
-                        className="border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03]"
+                        className="border-b border-white/10 bg-white/[0.01] px-4 py-5 transition duration-200 hover:bg-red-950/[0.08] sm:px-6"
                     >
 
                         {/* USER */}
 
                         <Link
                             href={`/profile/${meme.author_id}`}
-                            className="flex w-fit items-center gap-3 rounded-xl transition hover:opacity-80"
-                        >
+                            className="flex w-fit items-center gap-3 rounded-2xl px-1 py-1 transition hover:bg-white/[0.04]">
 
                             {/* AVATAR */}
 
@@ -1176,14 +1175,13 @@ const HomeTimeline = () => {
                                         meme.image_url
                                     }
                                     alt="Meme"
-                                    className="max-h-[600px] w-full object-contain"
+                                    className="max-h-[600px] w-full rounded-xl object-contain sm:rounded-2xl"
                                 />
                             </div>
                         )}
 
                         {/* POST ACTIONS */}
-
-                        <div className="mt-4 flex items-center gap-8 text-sm">
+                        <div className="mt-4 flex items-center gap-2 text-sm sm:gap-8">
 
                             {/* LIKE */}
 
@@ -1194,9 +1192,9 @@ const HomeTimeline = () => {
                                         meme.id
                                     )
                                 }
-                                className={`transition ${likeInfo?.liked
-                                        ? "text-red-400"
-                                        : "text-white/40 hover:text-red-400"
+                                className={`rounded-full px-3 py-2 transition ${likeInfo?.liked
+                                    ? "bg-red-500/10 text-red-400"
+                                    : "text-white/40 hover:bg-white/5 hover:text-red-400"
                                     }`}
                             >
                                 {likeInfo?.liked
@@ -1222,10 +1220,9 @@ const HomeTimeline = () => {
                                         ""
                                     );
                                 }}
-                                className={`transition ${openCommentBox ===
-                                        meme.id
-                                        ? "text-white"
-                                        : "text-white/40 hover:text-white"
+                                className={`rounded-full px-3 py-2 transition ${openCommentBox === meme.id
+                                    ? "bg-white/10 text-white"
+                                    : "text-white/40 hover:bg-white/5 hover:text-white"
                                     }`}
                             >
                                 💬{" "}
@@ -1243,11 +1240,9 @@ const HomeTimeline = () => {
                                         meme.id
                                     )
                                 }
-                                className={`transition ${saved[
-                                        meme.id
-                                    ]?.saved
-                                        ? "text-yellow-400"
-                                        : "text-white/40 hover:text-yellow-400"
+                                className={`rounded-full px-3 py-2 transition ${saved[meme.id]?.saved
+                                    ? "bg-yellow-400/10 text-yellow-400"
+                                    : "text-white/40 hover:bg-white/5 hover:text-yellow-400"
                                     }`}
                             >
                                 {saved[

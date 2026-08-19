@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 export default function CreateSarcasmPage() {
     const supabase = createClient();
@@ -114,10 +115,19 @@ export default function CreateSarcasmPage() {
             <div className="mx-auto w-full max-w-2xl border-x border-white/10">
 
                 {/* Header */}
-                <header className="border-b border-white/10 px-6 py-4">
-                    <h1 className="text-xl font-bold">
-                        Create Sarcasm
-                    </h1>
+                <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-4 py-4 backdrop-blur-xl sm:px-6">
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/"
+                            className="text-white/50 transition hover:text-white"
+                        >
+                            ← Home
+                        </Link>
+
+                        <h1 className="text-xl font-bold">
+                            Create Sarcasm
+                        </h1>
+                    </div>
                 </header>
 
                 {/* Form */}
@@ -130,7 +140,7 @@ export default function CreateSarcasmPage() {
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="What's on your mind? 👀"
+                        placeholder="Wash away your procrastination by uploading sarcasms..."
                         maxLength={500}
                         rows={6}
                         className="w-full resize-none rounded-xl border border-white/10 bg-white/5 p-4 text-white outline-none placeholder:text-white/40 focus:border-white/30"
@@ -145,7 +155,7 @@ export default function CreateSarcasmPage() {
                     <label className="mt-5 block cursor-pointer rounded-xl border border-dashed border-white/20 bg-white/5 p-6 text-center transition hover:bg-white/10">
 
                         <div className="text-lg font-semibold">
-                            🖼️ Upload Meme
+                            🖼️ Upload pictures
                         </div>
 
                         <p className="mt-2 text-sm text-white/40">
