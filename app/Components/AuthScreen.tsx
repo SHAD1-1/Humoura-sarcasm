@@ -43,10 +43,7 @@ export default function AuthScreen() {
                 return;
             }
 
-            // Refresh the server component so
-            // app/page.tsx sees the logged-in user.
             window.location.reload();
-
             return;
         }
 
@@ -68,22 +65,27 @@ export default function AuthScreen() {
             return;
         }
 
-        // If Supabase immediately creates a session,
-        // reload and show Home.
+        // ========================================
+        // SESSION CREATED IMMEDIATELY
+        // ========================================
+
         if (data.session) {
             window.location.reload();
             return;
         }
 
-        // If email confirmation is enabled,
-        // there will be no session yet.
+        // ========================================
+        // EMAIL CONFIRMATION REQUIRED
+        // ========================================
+
         setSuccess(
-            "Account created. Please check your email to confirm your account."
+            "Your account was created successfully. Check your email to verify your account, then log in."
         );
 
+        setMode("login");
+        setPassword("");
         setLoading(false);
     }
-
     return (
         <main className="flex min-h-screen items-center justify-center bg-black px-5 text-white">
 
@@ -190,9 +192,22 @@ export default function AuthScreen() {
                         {/* SUCCESS */}
 
                         {success && (
-                            <p className="text-sm text-green-400">
-                                {success}
-                            </p>
+                            <div className="rounded-2xl border border-green-400/20 bg-green-400/5 p-3">
+                                <p className="text-sm text-green-400">
+                                    {success}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setMode("login");
+                                        setSuccess("");
+                                    }}
+                                    className="mt-3 text-sm font-semibold text-white underline"
+                                >
+                                    Go to log in
+                                </button>
+                            </div>
                         )}
 
                         {/* SUBMIT */}
