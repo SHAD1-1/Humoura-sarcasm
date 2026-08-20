@@ -32,6 +32,9 @@ type ReplyThreadProps = {
     onReplyAdded?: (
         reply: Reply
     ) => void;
+    onReplyDeleted?: (
+        replyId: string
+    ) => void;
 };
 
 export default function ReplyThread({
@@ -39,9 +42,14 @@ export default function ReplyThread({
     memeAuthorId,
     replies,
     onReplyAdded,
+    onReplyDeleted,
 }: ReplyThreadProps) {
-    const supabase =
-        createClient();
+    const supabase = createClient();
+
+    const [
+        currentUserId,
+        setCurrentUserId,
+    ] = useState<string | null>(null);
 
     const [
         replyLikes,
@@ -66,6 +74,32 @@ export default function ReplyThread({
         submitting,
         setSubmitting,
     ] = useState(false);
+
+    const [
+        deletingReplyId,
+        setDeletingReplyId,
+    ] = useState<string | null>(
+        null
+    );
+
+    // ==========================================
+    // GET CURRENT USER
+    // ==========================================
+
+    useEffect(() => {
+        async function loadCurrentUser() {
+            const {
+                data: { user },
+            } =
+                await supabase.auth.getUser();
+
+            setCurrentUserId(
+                user?.id || null
+            );
+        }
+
+        loadCurrentUser();
+    }, []);
 
     // ==========================================
     // LOAD COMMENT LIKES
@@ -142,9 +176,7 @@ export default function ReplyThread({
                 }
             );
 
-            setReplyLikes(
-                info
-            );
+            setReplyLikes(info);
         }
 
         loadReplyLikes();
@@ -170,8 +202,9 @@ export default function ReplyThread({
                 liked: false,
             };
 
-        const oldState =
-            { ...current };
+        const oldState = {
+            ...current,
+        };
 
         setReplyLikes(
             (previous) => ({
@@ -191,22 +224,24 @@ export default function ReplyThread({
             })
         );
 
+        // ========================================
         // UNLIKE
+        // ========================================
+
         if (current.liked) {
-            const { error } =
-                await supabase
-                    .from(
-                        "reply_likes"
-                    )
-                    .delete()
-                    .eq(
-                        "reply_id",
-                        reply.id
-                    )
-                    .eq(
-                        "user_id",
-                        user.id
-                    );
+            const {
+                error,
+            } = await supabase
+                .from("reply_likes")
+                .delete()
+                .eq(
+                    "reply_id",
+                    reply.id
+                )
+                .eq(
+                    "user_id",
+                    user.id
+                );
 
             if (error) {
                 console.error(
@@ -225,7 +260,6 @@ export default function ReplyThread({
                 return;
             }
 
-            // Delete comment-like notification
             if (
                 reply.user_id !==
                 user.id
@@ -273,18 +307,20 @@ export default function ReplyThread({
             return;
         }
 
+        // ========================================
         // LIKE
-        const { error } =
-            await supabase
-                .from(
-                    "reply_likes"
-                )
-                .insert({
-                    reply_id:
-                        reply.id,
-                    user_id:
-                        user.id,
-                });
+        // ========================================
+
+        const {
+            error,
+        } = await supabase
+            .from("reply_likes")
+            .insert({
+                reply_id:
+                    reply.id,
+                user_id:
+                    user.id,
+            });
 
         if (error) {
             console.error(
@@ -303,7 +339,6 @@ export default function ReplyThread({
             return;
         }
 
-        // Notification
         if (
             reply.user_id !==
             user.id
@@ -319,11 +354,15 @@ export default function ReplyThread({
                     .insert({
                         recipient_id:
                             reply.user_id,
+
                         actor_id:
                             user.id,
+
                         type: "like",
+
                         meme_id:
                             reply.meme_id,
+
                         reply_id:
                             reply.id,
                     });
@@ -336,6 +375,97 @@ export default function ReplyThread({
                     notificationError
                 );
             }
+        }
+    }
+
+    // ==========================================
+    // DELETE COMMENT / REPLY
+    // ==========================================
+
+    async function handleDeleteReply(
+        reply: Reply
+    ) {
+        const {
+            data: { user },
+        } =
+            await supabase.auth.getUser();
+
+        if (!user) return;
+
+        // Only the author can delete it
+        if (
+            reply.user_id !==
+            user.id
+        ) {
+            console.error(
+                "DELETE REPLY BLOCKED: not the author"
+            );
+            return;
+        }
+
+        const confirmed =
+            window.confirm(
+                "Delete this comment? This cannot be undone."
+            );
+
+        if (!confirmed) return;
+
+        setDeletingReplyId(
+            reply.id
+        );
+
+        try {
+            const {
+                error,
+            } = await supabase
+                .from("replies")
+                .delete()
+                .eq(
+                    "id",
+                    reply.id
+                )
+                .eq(
+                    "user_id",
+                    user.id
+                );
+
+            if (error) {
+                console.error(
+                    "DELETE REPLY ERROR:",
+                    {
+                        message:
+                            error.message,
+                        details:
+                            error.details,
+                        hint:
+                            error.hint,
+                        code:
+                            error.code,
+                    }
+                );
+
+                return;
+            }
+
+            // Remove it immediately from the parent's state
+            onReplyDeleted?.(
+                reply.id
+            );
+
+            // Close reply box if it was open
+            if (
+                replyingTo ===
+                reply.id
+            ) {
+                setReplyingTo(
+                    null
+                );
+                setReplyText("");
+            }
+        } finally {
+            setDeletingReplyId(
+                null
+            );
         }
     }
 
@@ -413,10 +543,12 @@ export default function ReplyThread({
                     )
                     .single();
 
-            const newReply: Reply = {
+            const newReply: Reply =
+            {
                 ...insertedReply,
                 profile:
-                    profile || null,
+                    profile ||
+                    null,
             };
 
             onReplyAdded?.(
@@ -440,13 +572,14 @@ export default function ReplyThread({
                             parentReplyId
                     );
 
-                if (parentReply) {
+                if (
+                    parentReply
+                ) {
                     recipientId =
                         parentReply.user_id;
                 }
             }
 
-            // Don't notify yourself
             if (
                 recipientId !==
                 user.id
@@ -462,11 +595,15 @@ export default function ReplyThread({
                         .insert({
                             recipient_id:
                                 recipientId,
+
                             actor_id:
                                 user.id,
+
                             type: "reply",
+
                             meme_id:
                                 memeId,
+
                             reply_id:
                                 insertedReply.id,
                         });
@@ -517,6 +654,14 @@ export default function ReplyThread({
                         liked: false,
                     };
 
+                const isOwner =
+                    currentUserId ===
+                    reply.user_id;
+
+                const isDeleting =
+                    deletingReplyId ===
+                    reply.id;
+
                 return (
                     <div
                         key={
@@ -528,13 +673,19 @@ export default function ReplyThread({
                                 : ""
                         }
                     >
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                        <div
+                            className={`rounded-2xl border border-white/10 bg-white/[0.03] p-4 ${isDeleting
+                                    ? "opacity-50"
+                                    : ""
+                                }`}
+                        >
 
                             {/* AUTHOR */}
 
                             <div className="flex items-center gap-3">
 
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-xs font-bold">
+
                                     {reply
                                         .profile
                                         ?.avatar_url ? (
@@ -564,9 +715,11 @@ export default function ReplyThread({
                                             .toUpperCase() ||
                                         "U"
                                     )}
+
                                 </div>
 
                                 <div className="min-w-0">
+
                                     <p className="truncate text-sm font-semibold">
                                         {reply
                                             .profile
@@ -581,6 +734,7 @@ export default function ReplyThread({
                                             ?.username ||
                                             "username"}
                                     </p>
+
                                 </div>
 
                             </div>
@@ -601,7 +755,9 @@ export default function ReplyThread({
 
                             {/* COMMENT ACTIONS */}
 
-                            <div className="mt-3 flex items-center gap-6 text-xs">
+                            <div className="mt-3 flex items-center gap-3 text-xs">
+
+                                {/* LIKE */}
 
                                 <button
                                     type="button"
@@ -610,9 +766,12 @@ export default function ReplyThread({
                                             reply
                                         )
                                     }
-                                    className={`transition ${like.liked
-                                            ? "text-red-400"
-                                            : "text-white/40 hover:text-red-400"
+                                    disabled={
+                                        isDeleting
+                                    }
+                                    className={`rounded-full px-3 py-1.5 transition ${like.liked
+                                            ? "bg-red-500/10 text-red-400"
+                                            : "text-white/40 hover:bg-white/5 hover:text-red-400"
                                         }`}
                                 >
                                     {like.liked
@@ -622,6 +781,8 @@ export default function ReplyThread({
                                         like.count
                                     }
                                 </button>
+
+                                {/* REPLY */}
 
                                 <button
                                     type="button"
@@ -633,10 +794,34 @@ export default function ReplyThread({
                                             ""
                                         );
                                     }}
-                                    className="text-white/40 transition hover:text-white"
+                                    disabled={
+                                        isDeleting
+                                    }
+                                    className="rounded-full px-3 py-1.5 text-white/40 transition hover:bg-white/5 hover:text-white"
                                 >
                                     ↩ Reply
                                 </button>
+
+                                {/* DELETE */}
+
+                                {isOwner && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleDeleteReply(
+                                                reply
+                                            )
+                                        }
+                                        disabled={
+                                            isDeleting
+                                        }
+                                        className="rounded-full px-3 py-1.5 text-white/40 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed"
+                                    >
+                                        {isDeleting
+                                            ? "Deleting..."
+                                            : "Delete"}
+                                    </button>
+                                )}
 
                             </div>
 
@@ -705,6 +890,9 @@ export default function ReplyThread({
                                                     }
                                                 }}
                                                 placeholder="Write your reply..."
+                                                disabled={
+                                                    submitting
+                                                }
                                                 className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/30"
                                             />
 
@@ -727,6 +915,7 @@ export default function ReplyThread({
                                             </button>
 
                                         </div>
+
                                     </div>
                                 )}
 

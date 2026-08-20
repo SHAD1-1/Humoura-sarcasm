@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 export default function AuthScreen() {
     const supabase = createClient();
@@ -180,6 +181,16 @@ export default function AuthScreen() {
                             }
                             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-white/30"
                         />
+                        {mode === "login" && (
+                            <div className="text-right">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-sm text-white/50 transition hover:text-white"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+                        )}
 
                         {/* ERROR */}
 

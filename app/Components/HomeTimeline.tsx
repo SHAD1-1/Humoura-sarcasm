@@ -44,14 +44,21 @@ const HomeTimeline = () => {
     const supabase = createClient();
 
     const [memes, setMemes] = useState<Meme[]>([]);
+
     const [likes, setLikes] =
         useState<Record<string, LikeInfo>>({});
+
     const [replies, setReplies] =
         useState<Record<string, Reply[]>>({});
+
     const [replyCounts, setReplyCounts] =
         useState<Record<string, number>>({});
+
     const [saved, setSaved] =
         useState<Record<string, SaveInfo>>({});
+
+    const [currentUserId, setCurrentUserId] =
+        useState<string | null>(null);
 
     const [openCommentBox, setOpenCommentBox] =
         useState<string | null>(null);
@@ -84,8 +91,7 @@ const HomeTimeline = () => {
             const {
                 data: { user },
                 error: userError,
-            } =
-                await supabase.auth.getUser();
+            } = await supabase.auth.getUser();
 
             if (userError) {
                 console.error(
@@ -109,6 +115,8 @@ const HomeTimeline = () => {
                 setLoading(false);
                 return;
             }
+
+            setCurrentUserId(user.id);
 
             // ========================================
             // GET MEMES
@@ -249,7 +257,9 @@ const HomeTimeline = () => {
                     ];
             }
 
-            setMemes(shuffledPosts);
+            setMemes(
+                shuffledPosts
+            );
 
             // ========================================
             // GET LIKES
@@ -337,8 +347,13 @@ const HomeTimeline = () => {
                 }
             );
 
-            setLikes(likeInfo);
-            setSaved(savedInfo);
+            setLikes(
+                likeInfo
+            );
+
+            setSaved(
+                savedInfo
+            );
 
             // ========================================
             // GET REPLIES / COMMENTS
@@ -346,7 +361,8 @@ const HomeTimeline = () => {
 
             const memeIds =
                 shuffledPosts.map(
-                    (meme) => meme.id
+                    (meme) =>
+                        meme.id
                 );
 
             const {
@@ -389,19 +405,19 @@ const HomeTimeline = () => {
                 ];
 
                 const {
-                    data: replyProfiles,
+                    data:
+                    replyProfiles,
                     error:
                     replyProfileError,
-                } =
-                    await supabase
-                        .from("profiles")
-                        .select(
-                            "id, username, full_name, avatar_url"
-                        )
-                        .in(
-                            "id",
-                            replyUserIds
-                        );
+                } = await supabase
+                    .from("profiles")
+                    .select(
+                        "id, username, full_name, avatar_url"
+                    )
+                    .in(
+                        "id",
+                        replyUserIds
+                    );
 
                 if (
                     replyProfileError
@@ -425,7 +441,6 @@ const HomeTimeline = () => {
                                 reply.reply_id,
                             created_at:
                                 reply.created_at,
-
                             profile:
                                 replyProfiles?.find(
                                     (
@@ -499,6 +514,7 @@ const HomeTimeline = () => {
                 );
 
                 setReplies({});
+
                 setReplyCounts(
                     emptyCounts
                 );
@@ -511,7 +527,7 @@ const HomeTimeline = () => {
     }, []);
 
     // ==========================================
-    // LIKE / UNLIKE POST
+    // LIKE / UNLIKE
     // ==========================================
 
     async function handleLike(
@@ -540,7 +556,6 @@ const HomeTimeline = () => {
             ...currentLike,
         };
 
-        // Optimistic update
         setLikes(
             (previous) => ({
                 ...previous,
@@ -559,9 +574,7 @@ const HomeTimeline = () => {
             })
         );
 
-        // ========================================
         // UNLIKE
-        // ========================================
 
         if (
             currentLike.liked
@@ -597,7 +610,6 @@ const HomeTimeline = () => {
                 return;
             }
 
-            // Remove notification
             if (
                 meme.author_id !==
                 user.id
@@ -628,17 +640,17 @@ const HomeTimeline = () => {
             return;
         }
 
-        // ========================================
         // LIKE
-        // ========================================
 
         const {
             error,
         } = await supabase
             .from("meme_likes")
             .insert({
-                meme_id: memeId,
-                user_id: user.id,
+                meme_id:
+                    memeId,
+                user_id:
+                    user.id,
             });
 
         if (error) {
@@ -658,9 +670,7 @@ const HomeTimeline = () => {
             return;
         }
 
-        // ========================================
         // LIKE NOTIFICATION
-        // ========================================
 
         if (
             meme.author_id !==
@@ -677,11 +687,15 @@ const HomeTimeline = () => {
                     .insert({
                         recipient_id:
                             meme.author_id,
+
                         actor_id:
                             user.id,
+
                         type: "like",
+
                         meme_id:
                             memeId,
+
                         reply_id:
                             null,
                     });
@@ -716,9 +730,7 @@ const HomeTimeline = () => {
 
         if (!currentSave) return;
 
-        // ========================================
         // UNSAVE
-        // ========================================
 
         if (
             currentSave.saved
@@ -761,9 +773,7 @@ const HomeTimeline = () => {
             return;
         }
 
-        // ========================================
         // SAVE
-        // ========================================
 
         const {
             error,
@@ -772,8 +782,10 @@ const HomeTimeline = () => {
                 "saved_memes"
             )
             .insert({
-                meme_id: memeId,
-                user_id: user.id,
+                meme_id:
+                    memeId,
+                user_id:
+                    user.id,
             });
 
         if (error) {
@@ -794,6 +806,154 @@ const HomeTimeline = () => {
                 },
             })
         );
+    }
+
+    // ==========================================
+    // DELETE POST
+    // ==========================================
+
+    async function handleDeletePost(
+        memeId: string
+    ) {
+        const {
+            data: { user },
+        } =
+            await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const meme =
+            memes.find(
+                (item) =>
+                    item.id ===
+                    memeId
+            );
+
+        if (!meme) return;
+
+        if (
+            meme.author_id !==
+            user.id
+        ) {
+            console.error(
+                "DELETE POST BLOCKED: not the author"
+            );
+            return;
+        }
+
+        const confirmed =
+            window.confirm(
+                "Delete this post? This cannot be undone."
+            );
+
+        if (!confirmed) return;
+
+        const {
+            error,
+        } = await supabase
+            .from("memes")
+            .delete()
+            .eq(
+                "id",
+                memeId
+            )
+            .eq(
+                "author_id",
+                user.id
+            );
+
+        if (error) {
+            console.error(
+                "DELETE POST ERROR:",
+                {
+                    message:
+                        error.message,
+                    details:
+                        error.details,
+                    hint:
+                        error.hint,
+                    code:
+                        error.code,
+                }
+            );
+
+            return;
+        }
+
+        setMemes(
+            (previous) =>
+                previous.filter(
+                    (meme) =>
+                        meme.id !==
+                        memeId
+                )
+        );
+
+        setLikes(
+            (previous) => {
+                const next = {
+                    ...previous,
+                };
+
+                delete next[
+                    memeId
+                ];
+
+                return next;
+            }
+        );
+
+        setReplies(
+            (previous) => {
+                const next = {
+                    ...previous,
+                };
+
+                delete next[
+                    memeId
+                ];
+
+                return next;
+            }
+        );
+
+        setReplyCounts(
+            (previous) => {
+                const next = {
+                    ...previous,
+                };
+
+                delete next[
+                    memeId
+                ];
+
+                return next;
+            }
+        );
+
+        setSaved(
+            (previous) => {
+                const next = {
+                    ...previous,
+                };
+
+                delete next[
+                    memeId
+                ];
+
+                return next;
+            }
+        );
+
+        if (
+            openCommentBox ===
+            memeId
+        ) {
+            setOpenCommentBox(
+                null
+            );
+            setCommentText("");
+        }
     }
 
     // ==========================================
@@ -826,9 +986,7 @@ const HomeTimeline = () => {
                 return;
             }
 
-            if (!user) {
-                return;
-            }
+            if (!user) return;
 
             const meme = memes.find(
                 (item) =>
@@ -836,17 +994,13 @@ const HomeTimeline = () => {
                     memeId
             );
 
-            if (!meme) {
-                return;
-            }
-
-            // ========================================
-            // INSERT COMMENT
-            // ========================================
+            if (!meme) return;
 
             const {
-                data: insertedReply,
-                error: insertError,
+                data:
+                insertedReply,
+                error:
+                insertError,
             } =
                 await supabase
                     .from("replies")
@@ -883,10 +1037,6 @@ const HomeTimeline = () => {
 
                 return;
             }
-
-            // ========================================
-            // GET CURRENT USER PROFILE
-            // ========================================
 
             const {
                 data: profile,
@@ -941,10 +1091,6 @@ const HomeTimeline = () => {
                     null,
             };
 
-            // ========================================
-            // ADD COMMENT TO SCREEN
-            // ========================================
-
             setReplies(
                 (previous) => ({
                     ...previous,
@@ -953,7 +1099,6 @@ const HomeTimeline = () => {
                         ...(previous[
                             memeId
                         ] || []),
-
                         newReply,
                     ],
                 })
@@ -969,10 +1114,6 @@ const HomeTimeline = () => {
                         ] || 0) + 1,
                 })
             );
-
-            // ========================================
-            // COMMENT NOTIFICATION
-            // ========================================
 
             if (
                 meme.author_id !==
@@ -1011,10 +1152,6 @@ const HomeTimeline = () => {
                     );
                 }
             }
-
-            // ========================================
-            // CLEAR BOX
-            // ========================================
 
             setCommentText("");
 
@@ -1062,12 +1199,12 @@ const HomeTimeline = () => {
     // ==========================================
 
     if (
-        memes.length === 0
+        memes.length ===
+        0
     ) {
         return (
             <div className="px-6 py-10 text-center text-white/50">
-                No posts yet. Be the first
-                to post! 👀
+                No posts yet. Be the first to post! 👀
             </div>
         );
     }
@@ -1078,295 +1215,328 @@ const HomeTimeline = () => {
 
     return (
         <div className="pb-24 lg:pb-0">
-            {memes.map((meme) => {
-                const profile =
-                    meme.profile;
+            {memes.map(
+                (meme) => {
+                    const profile =
+                        meme.profile;
 
-                const likeInfo =
-                    likes[meme.id];
+                    const likeInfo =
+                        likes[meme.id];
 
-                const memeReplies =
-                    replies[meme.id] ||
-                    [];
+                    const memeReplies =
+                        replies[
+                        meme.id
+                        ] || [];
 
-                return (
-                    <article
-                        key={meme.id}
-                        className="border-b border-white/10 bg-white/[0.01] px-4 py-5 transition duration-200 hover:bg-red-950/[0.08] sm:px-6"
-                    >
+                    const isOwner =
+                        currentUserId ===
+                        meme.author_id;
 
-                        {/* USER */}
+                    return (
+                        <article
+                            key={
+                                meme.id
+                            }
+                            className="border-b border-white/10 bg-white/[0.01] px-4 py-5 transition duration-200 hover:bg-red-950/[0.08] sm:px-6"
+                        >
 
-                        <Link
-                            href={`/profile/${meme.author_id}`}
-                            className="flex w-fit items-center gap-3 rounded-2xl px-1 py-1 transition hover:bg-white/[0.04]">
+                            {/* HEADER */}
 
-                            {/* AVATAR */}
+                            <div className="flex items-start gap-3">
 
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+                                <Link
+                                    href={`/profile/${meme.author_id}`}
+                                    className="flex w-fit items-center gap-3 rounded-2xl px-1 py-1 transition hover:bg-white/[0.04]"
+                                >
 
-                                {profile?.avatar_url ? (
-                                    <img
-                                        src={
-                                            profile.avatar_url
+                                    {/* AVATAR */}
+
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
+
+                                        {profile?.avatar_url ? (
+                                            <img
+                                                src={
+                                                    profile.avatar_url
+                                                }
+                                                alt="Avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            profile?.full_name
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            profile?.username
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            "U"
+                                        )}
+
+                                    </div>
+
+                                    {/* USER */}
+
+                                    <div className="min-w-0">
+
+                                        <div className="flex items-center gap-2">
+
+                                            <p className="truncate font-semibold">
+                                                {profile?.full_name ||
+                                                    "User"}
+                                            </p>
+
+                                            <p className="truncate text-sm text-white/40">
+                                                @
+                                                {profile?.username ||
+                                                    "username"}
+                                            </p>
+
+                                        </div>
+
+                                        <p className="text-xs text-white/30">
+                                            {new Date(
+                                                meme.created_at
+                                            ).toLocaleString()}
+                                        </p>
+
+                                    </div>
+
+                                </Link>
+
+                                {/* OWNER DELETE */}
+
+                                {isOwner && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleDeletePost(
+                                                meme.id
+                                            )
                                         }
-                                        alt="Avatar"
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    profile?.full_name
-                                        ?.charAt(
-                                            0
-                                        )
-                                        .toUpperCase() ||
-                                    profile?.username
-                                        ?.charAt(
-                                            0
-                                        )
-                                        .toUpperCase() ||
-                                    "U"
+                                        className="ml-auto rounded-full px-3 py-1.5 text-xs font-medium text-white/40 transition hover:bg-red-500/10 hover:text-red-400"
+                                    >
+                                        Delete
+                                    </button>
                                 )}
 
                             </div>
 
-                            {/* USER INFO */}
+                            {/* TEXT */}
 
-                            <div className="min-w-0">
-
-                                <div className="flex items-center gap-2">
-
-                                    <p className="truncate font-semibold">
-                                        {profile?.full_name ||
-                                            "User"}
-                                    </p>
-
-                                    <p className="truncate text-sm text-white/40">
-                                        @
-                                        {profile?.username ||
-                                            "username"}
-                                    </p>
-
-                                </div>
-
-                                <p className="text-xs text-white/30">
-                                    {new Date(
-                                        meme.created_at
-                                    ).toLocaleString()}
+                            {meme.content && (
+                                <p className="mt-4 whitespace-pre-wrap text-[15px] leading-6">
+                                    {meme.content}
                                 </p>
+                            )}
 
-                            </div>
+                            {/* IMAGE */}
 
-                        </Link>
-
-                        {/* TEXT */}
-
-                        {meme.content && (
-                            <p className="mt-4 whitespace-pre-wrap text-[15px] leading-6">
-                                {meme.content}
-                            </p>
-                        )}
-
-                        {/* IMAGE */}
-
-                        {meme.image_url && (
-                            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                                <img
-                                    src={
-                                        meme.image_url
-                                    }
-                                    alt="Meme"
-                                    className="max-h-[600px] w-full rounded-xl object-contain sm:rounded-2xl"
-                                />
-                            </div>
-                        )}
-
-                        {/* POST ACTIONS */}
-                        <div className="mt-4 flex items-center gap-2 text-sm sm:gap-8">
-
-                            {/* LIKE */}
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleLike(
-                                        meme.id
-                                    )
-                                }
-                                className={`rounded-full px-3 py-2 transition ${likeInfo?.liked
-                                    ? "bg-red-500/10 text-red-400"
-                                    : "text-white/40 hover:bg-white/5 hover:text-red-400"
-                                    }`}
-                            >
-                                {likeInfo?.liked
-                                    ? "❤️"
-                                    : "♡"}{" "}
-                                {likeInfo?.count ||
-                                    0}
-                            </button>
-
-                            {/* COMMENT */}
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setOpenCommentBox(
-                                        openCommentBox ===
-                                            meme.id
-                                            ? null
-                                            : meme.id
-                                    );
-
-                                    setCommentText(
-                                        ""
-                                    );
-                                }}
-                                className={`rounded-full px-3 py-2 transition ${openCommentBox === meme.id
-                                    ? "bg-white/10 text-white"
-                                    : "text-white/40 hover:bg-white/5 hover:text-white"
-                                    }`}
-                            >
-                                💬{" "}
-                                {replyCounts[
-                                    meme.id
-                                ] || 0}
-                            </button>
-
-                            {/* SAVE */}
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleSave(
-                                        meme.id
-                                    )
-                                }
-                                className={`rounded-full px-3 py-2 transition ${saved[meme.id]?.saved
-                                    ? "bg-yellow-400/10 text-yellow-400"
-                                    : "text-white/40 hover:bg-white/5 hover:text-yellow-400"
-                                    }`}
-                            >
-                                {saved[
-                                    meme.id
-                                ]?.saved
-                                    ? "🔖 Saved"
-                                    : "🔖 Save"}
-                            </button>
-
-                        </div>
-
-                        {/* TOP-LEVEL COMMENT BOX */}
-
-                        {openCommentBox ===
-                            meme.id && (
-                                <div className="mt-4 flex gap-3">
-
-                                    <input
-                                        type="text"
-                                        value={
-                                            commentText
+                            {meme.image_url && (
+                                <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                                    <img
+                                        src={
+                                            meme.image_url
                                         }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setCommentText(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        onKeyDown={(
-                                            e
-                                        ) => {
-                                            if (
-                                                e.key ===
-                                                "Enter" &&
-                                                !e.shiftKey
-                                            ) {
-                                                e.preventDefault();
-
-                                                handleComment(
-                                                    meme.id
-                                                );
-                                            }
-                                        }}
-                                        placeholder="Write a comment..."
-                                        className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
+                                        alt="Meme"
+                                        className="max-h-[600px] w-full rounded-xl object-contain sm:rounded-2xl"
                                     />
-
-                                    <button
-                                        type="button"
-                                        disabled={
-                                            submittingComment ||
-                                            !commentText.trim()
-                                        }
-                                        onClick={() =>
-                                            handleComment(
-                                                meme.id
-                                            )
-                                        }
-                                        className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
-                                    >
-                                        {submittingComment
-                                            ? "..."
-                                            : "Comment"}
-                                    </button>
-
                                 </div>
                             )}
 
-                        {/* COMMENTS + NESTED REPLIES */}
+                            {/* ACTIONS */}
 
-                        <ReplyThread
-                            memeId={
-                                meme.id
-                            }
-                            memeAuthorId={
-                                meme.author_id
-                            }
-                            replies={
-                                memeReplies
-                            }
-                            onReplyAdded={(
-                                newReply
-                            ) => {
-                                setReplies(
-                                    (
-                                        previous
-                                    ) => ({
-                                        ...previous,
+                            <div className="mt-4 flex items-center gap-2 text-sm sm:gap-8">
 
-                                        [meme.id]:
-                                            [
-                                                ...(previous[
-                                                    meme.id
-                                                ] ||
-                                                    []),
-                                                newReply,
-                                            ],
-                                    })
-                                );
+                                {/* LIKE */}
 
-                                setReplyCounts(
-                                    (
-                                        previous
-                                    ) => ({
-                                        ...previous,
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleLike(
+                                            meme.id
+                                        )
+                                    }
+                                    className={`rounded-full px-3 py-2 transition ${likeInfo?.liked
+                                        ? "bg-red-500/10 text-red-400"
+                                        : "text-white/40 hover:bg-white/5 hover:text-red-400"
+                                        }`}
+                                >
+                                    {likeInfo?.liked
+                                        ? "❤️"
+                                        : "♡"}{" "}
+                                    {likeInfo?.count ||
+                                        0}
+                                </button>
 
-                                        [meme.id]:
-                                            (
-                                                previous[
+                                {/* COMMENT */}
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpenCommentBox(
+                                            openCommentBox ===
                                                 meme.id
-                                                ] ||
-                                                0
-                                            ) + 1,
-                                    })
-                                );
-                            }}
-                        />
+                                                ? null
+                                                : meme.id
+                                        );
 
-                    </article>
-                );
-            })}
+                                        setCommentText(
+                                            ""
+                                        );
+                                    }}
+                                    className={`rounded-full px-3 py-2 transition ${openCommentBox ===
+                                        meme.id
+                                        ? "bg-white/10 text-white"
+                                        : "text-white/40 hover:bg-white/5 hover:text-white"
+                                        }`}
+                                >
+                                    💬{" "}
+                                    {replyCounts[
+                                        meme.id
+                                    ] || 0}
+                                </button>
+
+                                {/* SAVE */}
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleSave(
+                                            meme.id
+                                        )
+                                    }
+                                    className={`rounded-full px-3 py-2 transition ${saved[
+                                        meme.id
+                                    ]?.saved
+                                        ? "bg-yellow-400/10 text-yellow-400"
+                                        : "text-white/40 hover:bg-white/5 hover:text-yellow-400"
+                                        }`}
+                                >
+                                    {saved[
+                                        meme.id
+                                    ]?.saved
+                                        ? "🔖 Saved"
+                                        : "🔖 Save"}
+                                </button>
+
+                            </div>
+
+                            {/* COMMENT BOX */}
+
+                            {openCommentBox ===
+                                meme.id && (
+                                    <div className="mt-4 flex gap-3">
+
+                                        <input
+                                            type="text"
+                                            value={
+                                                commentText
+                                            }
+                                            onChange={(
+                                                e
+                                            ) =>
+                                                setCommentText(
+                                                    e
+                                                        .target
+                                                        .value
+                                                )
+                                            }
+                                            onKeyDown={(
+                                                e
+                                            ) => {
+                                                if (
+                                                    e.key ===
+                                                    "Enter" &&
+                                                    !e.shiftKey
+                                                ) {
+                                                    e.preventDefault();
+
+                                                    handleComment(
+                                                        meme.id
+                                                    );
+                                                }
+                                            }}
+                                            placeholder="Write a comment..."
+                                            className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/30 focus:border-white/30"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            disabled={
+                                                submittingComment ||
+                                                !commentText.trim()
+                                            }
+                                            onClick={() =>
+                                                handleComment(
+                                                    meme.id
+                                                )
+                                            }
+                                            className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                            {submittingComment
+                                                ? "..."
+                                                : "Comment"}
+                                        </button>
+
+                                    </div>
+                                )}
+
+                            {/* COMMENTS */}
+
+                            <ReplyThread
+                                memeId={meme.id}
+                                memeAuthorId={meme.author_id}
+                                replies={memeReplies}
+
+                                onReplyAdded={(newReply) => {
+                                    setReplies((previous) => ({
+                                        ...previous,
+
+                                        [meme.id]: [
+                                            ...(previous[meme.id] || []),
+                                            newReply,
+                                        ],
+                                    }));
+
+                                    setReplyCounts((previous) => ({
+                                        ...previous,
+
+                                        [meme.id]:
+                                            (previous[meme.id] || 0) + 1,
+                                    }));
+                                }}
+
+                                onReplyDeleted={(replyId) => {
+                                    setReplies((previous) => ({
+                                        ...previous,
+
+                                        [meme.id]: (
+                                            previous[meme.id] || []
+                                        ).filter(
+                                            (reply) =>
+                                                reply.id !==
+                                                replyId
+                                        ),
+                                    }));
+
+                                    setReplyCounts((previous) => ({
+                                        ...previous,
+
+                                        [meme.id]: Math.max(
+                                            0,
+                                            (previous[meme.id] || 0) - 1
+                                        ),
+                                    }));
+                                }}
+                            />
+
+                        </article>
+                    );
+                }
+            )}
         </div>
     );
 };
