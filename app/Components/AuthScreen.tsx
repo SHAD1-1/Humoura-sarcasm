@@ -100,19 +100,63 @@ export default function AuthScreen() {
         const {
             data,
             error: signupError,
-        } =
-            await supabase.auth.signUp({
-                email: email.trim(),
-                password,
-            });
+        } = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+        });
+
+        console.log("===== HUMOURA SIGNUP TEST =====");
+        console.log("USER:", data.user);
+        console.log("SESSION:", data.session);
+        console.log("ERROR:", signupError);
+        console.log("================================");
+
+        console.log("SIGNUP RESPONSE:", {
+            data,
+            error: signupError,
+        });
 
         if (signupError) {
+            console.log(
+                "SIGNUP ERROR MESSAGE:",
+                signupError.message
+            );
+
             setError(
                 signupError.message
             );
+
             setLoading(false);
             return;
         }
+
+        if (!data.user) {
+            setError(
+                "Signup did not create a user. Please try again."
+            );
+
+            setLoading(false);
+            return;
+        }
+
+        console.log(
+            "SIGNUP USER:",
+            data.user
+        );
+
+        // New account
+        if (data.session) {
+            window.location.reload();
+            return;
+        }
+
+        setSuccess(
+            "Your account was created successfully."
+        );
+
+        setMode("login");
+        setPassword("");
+        setLoading(false);
 
         // ========================================
         // SESSION CREATED
@@ -171,8 +215,8 @@ export default function AuthScreen() {
                                 setSuccess("");
                             }}
                             className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${mode === "login"
-                                    ? "bg-white text-black"
-                                    : "text-white/50 hover:text-white"
+                                ? "bg-white text-black"
+                                : "text-white/50 hover:text-white"
                                 }`}
                         >
                             Log in
@@ -186,8 +230,8 @@ export default function AuthScreen() {
                                 setSuccess("");
                             }}
                             className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${mode === "signup"
-                                    ? "bg-white text-black"
-                                    : "text-white/50 hover:text-white"
+                                ? "bg-white text-black"
+                                : "text-white/50 hover:text-white"
                                 }`}
                         >
                             Sign up
