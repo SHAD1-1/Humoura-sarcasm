@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Humoura",
-  description: "Daily dose of sarcasm",
+  description: "Your daily dose of sarcasm.",
+  verification: {
+    google: "OsbcP56l2QWU_QBQ8b90LOMnfxZpHxO3k07L3ej49C8",
+  },
 };
 
 export default function RootLayout({
