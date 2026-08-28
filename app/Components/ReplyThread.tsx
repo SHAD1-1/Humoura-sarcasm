@@ -675,8 +675,8 @@ export default function ReplyThread({
                     >
                         <div
                             className={`rounded-2xl border border-white/10 bg-white/[0.03] p-4 ${isDeleting
-                                    ? "opacity-50"
-                                    : ""
+                                ? "opacity-50"
+                                : ""
                                 }`}
                         >
 
@@ -727,7 +727,7 @@ export default function ReplyThread({
                                             "User"}
                                     </p>
 
-                                    <p className="truncate text-xs text-white/40">
+                                    <p className="truncate text-xs text-muted-foreground">
                                         @
                                         {reply
                                             .profile
@@ -741,13 +741,13 @@ export default function ReplyThread({
 
                             {/* TEXT */}
 
-                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/80">
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-card-foreground">
                                 {reply.text}
                             </p>
 
                             {/* TIME */}
 
-                            <p className="mt-2 text-xs text-white/30">
+                            <p className="mt-2 text-xs text-muted-foreground">
                                 {new Date(
                                     reply.created_at
                                 ).toLocaleString()}
@@ -770,8 +770,8 @@ export default function ReplyThread({
                                         isDeleting
                                     }
                                     className={`rounded-full px-3 py-1.5 transition ${like.liked
-                                            ? "bg-red-500/10 text-red-400"
-                                            : "text-white/40 hover:bg-white/5 hover:text-red-400"
+                                        ? "bg-red-500/10 text-red-400"
+                                        : "text-muted-foreground hover:bg-accent hover:text-red-500"
                                         }`}
                                 >
                                     {like.liked
@@ -797,7 +797,7 @@ export default function ReplyThread({
                                     disabled={
                                         isDeleting
                                     }
-                                    className="rounded-full px-3 py-1.5 text-white/40 transition hover:bg-white/5 hover:text-white"
+                                    className="rounded-full px-3 py-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
                                 >
                                     ↩ Reply
                                 </button>
@@ -815,8 +815,7 @@ export default function ReplyThread({
                                         disabled={
                                             isDeleting
                                         }
-                                        className="rounded-full px-3 py-1.5 text-white/40 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed"
-                                    >
+                                        className="rounded-full px-3 py-1.5 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed">
                                         {isDeleting
                                             ? "Deleting..."
                                             : "Delete"}
@@ -829,11 +828,11 @@ export default function ReplyThread({
 
                             {replyingTo ===
                                 reply.id && (
-                                    <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-3">
+                                    <div className="mt-4 rounded-xl border border-border bg-background/70 p-3">
 
                                         <div className="mb-2 flex items-center justify-between">
 
-                                            <span className="text-xs text-white/40">
+                                            <span className="text-xs text-muted-foreground">
                                                 Replying to{" "}
                                                 {reply
                                                     .profile
@@ -892,8 +891,7 @@ export default function ReplyThread({
                                                 placeholder="Write your reply..."
                                                 disabled={
                                                     submitting
-                                                }
-                                                className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/30"
+                                                } className="min-w-0 flex-1 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
                                             />
 
                                             <button
@@ -907,8 +905,7 @@ export default function ReplyThread({
                                                         reply.id
                                                     )
                                                 }
-                                                className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
-                                            >
+                                                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-40">
                                                 {submitting
                                                     ? "..."
                                                     : "Reply"}
@@ -937,7 +934,7 @@ export default function ReplyThread({
     }
 
     return (
-        <div className="mt-4 space-y-3 border-l border-white/10 pl-4">
+        <div className="mt-4 space-y-3 border-l border-border pl-4">
             {renderReplies(
                 null,
                 0

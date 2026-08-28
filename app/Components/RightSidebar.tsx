@@ -25,19 +25,20 @@ const RightSidebar = async () => {
         data: { user },
     } = await supabase.auth.getUser();
 
-    // Logged-out users should not see personalized
-    // suggestions.
+    // ==========================================
+    // LOGGED OUT
+    // ==========================================
+
     if (!user) {
         return (
-            <aside className="hidden w-80 px-6 py-6 lg:block">
-                {/* Search */}
+            <aside className="hidden w-80 shrink-0 px-6 py-6 lg:block">
                 <Link
                     href="/explore"
-                    className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 transition hover:bg-white/15"
+                    className="flex items-center gap-3 rounded-full border border-border bg-card/80 px-5 py-3 text-muted-foreground backdrop-blur-xl transition hover:bg-accent hover:text-foreground"
                 >
-                    <BsSearch className="text-white/50" />
+                    <BsSearch className="text-lg" />
 
-                    <span className="text-sm text-white/50">
+                    <span className="text-sm">
                         Search Humoura...
                     </span>
                 </Link>
@@ -46,7 +47,7 @@ const RightSidebar = async () => {
     }
 
     // ==========================================
-    // GET PEOPLE CURRENT USER ALREADY FOLLOWS
+    // FOLLOWING
     // ==========================================
 
     const {
@@ -69,12 +70,13 @@ const RightSidebar = async () => {
 
     const followedIds = new Set(
         (followData || []).map(
-            (item) => item.following_id
+            (item) =>
+                item.following_id
         )
     );
 
     // ==========================================
-    // GET PROFILES FOR WHO TO FOLLOW
+    // SUGGESTIONS
     // ==========================================
 
     const {
@@ -85,8 +87,11 @@ const RightSidebar = async () => {
         .select(
             "id, username, full_name, avatar_url"
         )
-        .neq("id", user.id)
-        .limit(20);
+        .neq(
+            "id",
+            user.id
+        )
+        .limit(12);
 
     if (profileError) {
         console.error(
@@ -95,7 +100,6 @@ const RightSidebar = async () => {
         );
     }
 
-    // Remove users already followed
     const suggestedProfiles: Profile[] =
         (profileData || [])
             .filter(
@@ -130,7 +134,7 @@ const RightSidebar = async () => {
             "created_at",
             startOfToday
         )
-        .limit(1000);
+        .limit(100);
 
     if (todayMemeError) {
         console.error(
@@ -140,10 +144,8 @@ const RightSidebar = async () => {
     }
 
     const memeRows =
-        (todayMemes ||
-            []) as MemeAuthorRow[];
+        (todayMemes || []) as MemeAuthorRow[];
 
-    // Count posts by author
     const authorCounts =
         new Map<string, number>();
 
@@ -156,7 +158,6 @@ const RightSidebar = async () => {
         );
     }
 
-    // Sort highest post count first
     const topAuthorIds =
         Array.from(
             authorCounts.entries()
@@ -167,7 +168,8 @@ const RightSidebar = async () => {
             )
             .slice(0, 5)
             .map(
-                ([authorId]) => authorId
+                ([authorId]) =>
+                    authorId
             );
 
     let topProfiles: Profile[] = [];
@@ -199,191 +201,244 @@ const RightSidebar = async () => {
             topProfileData || [];
     }
 
-    // ==========================================
-    // PAGE
-    // ==========================================
+    return (<aside className="hidden w-80 shrink-0 px-5 py-6 lg:block">
 
-    return (
-        <aside className="hidden w-80 shrink-0 px-6 py-6 lg:block">
+        {/* ======================================
+                SEARCH
+            ====================================== */}
 
-            {/* SEARCH */}
+        <Link
+            href="/explore"
+            className="flex items-center gap-3 rounded-full border border-border bg-card/80 px-5 py-3 text-muted-foreground shadow-sm backdrop-blur-xl transition hover:bg-accent hover:text-foreground"
+        >
+            <BsSearch className="text-lg" />
 
-            <Link
-                href="/explore"
-                className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 transition hover:bg-white/15"
-            >
-                <BsSearch className="text-white/50" />
+            <span className="text-sm">
+                Search Humoura...
+            </span>
+        </Link>
 
-                <span className="text-sm text-white/50">
-                    Search Humoura...
+        {/* ======================================
+                TOP MEMERS
+            ====================================== */}
+
+        <section className="glass-card mt-5 overflow-hidden rounded-3xl p-5">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl">
+                        👑
+                    </span>
+
+                    <h2 className="text-lg font-bold text-card-foreground">
+                        Top memers today
+                    </h2>
+                </div>
+
+                <span className="text-sm font-medium text-primary">
+                    Today
                 </span>
-            </Link>
+            </div>
 
-            {/* TOP MEMERS */}
-
-            <div className="mt-6 rounded-2xl border border-white/10 p-5">
-
-                <h2 className="text-lg font-bold">
-                    Top memers today
-                </h2>
-
-                {topProfiles.length === 0 ? (
-                    <p className="mt-5 text-sm text-white/40">
-                        No posts yet today.
-                    </p>
-                ) : (
-                    <div className="mt-5 space-y-5">
-
-                        {topAuthorIds.map(
-                            (authorId) => {
-                                const profile =
-                                    topProfiles.find(
-                                        (
-                                            item
-                                        ) =>
-                                            item.id ===
-                                            authorId
-                                    );
-
-                                if (!profile) {
-                                    return null;
-                                }
-
-                                const postCount =
-                                    authorCounts.get(
+            {topProfiles.length === 0 ? (
+                <p className="mt-6 text-sm text-muted-foreground">
+                    No posts yet today.
+                </p>
+            ) : (
+                <div className="mt-5 divide-y divide-border">
+                    {topAuthorIds.map(
+                        (
+                            authorId,
+                            index
+                        ) => {
+                            const profile =
+                                topProfiles.find(
+                                    (
+                                        item
+                                    ) =>
+                                        item.id ===
                                         authorId
-                                    ) || 0;
+                                );
 
-                                return (
-                                    <Link
-                                        key={
-                                            authorId
-                                        }
-                                        href={`/profile/${authorId}`}
-                                        className="block transition hover:opacity-80"
-                                    >
+                            if (
+                                !profile
+                            ) {
+                                return null;
+                            }
 
-                                        <p className="font-semibold">
+                            const postCount =
+                                authorCounts.get(
+                                    authorId
+                                ) || 0;
+
+                            return (
+                                <Link
+                                    key={
+                                        authorId
+                                    }
+                                    href={`/profile/${authorId}`}
+                                    className="flex items-center gap-3 py-4 first:pt-0 last:pb-0 transition hover:bg-accent/40"
+                                >
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                                        {index +
+                                            1}
+                                    </span>
+
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-bold text-muted-foreground">
+                                        {profile.avatar_url ? (
+                                            <img
+                                                src={
+                                                    profile.avatar_url
+                                                }
+                                                alt="Avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            profile.full_name
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            profile.username
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            "U"
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold text-card-foreground">
+                                            {profile.full_name ||
+                                                "User"}
+                                        </p>
+
+                                        <p className="truncate text-xs text-muted-foreground">
                                             @
                                             {profile.username ||
                                                 "username"}
                                         </p>
+                                    </div>
 
-                                        <p className="text-sm text-white/40">
-                                            {postCount}{" "}
-                                            {postCount ===
-                                                1
-                                                ? "post"
-                                                : "posts"}
+                                    <span className="shrink-0 text-xs font-medium text-primary">
+                                        {postCount}
+                                    </span>
+                                </Link>
+                            );
+                        }
+                    )}
+                </div>
+            )}
+        </section>
+
+        {/* ======================================
+                FOLLOW SUGGESTIONS
+            ====================================== */}
+
+        <section className="glass-card mt-5 overflow-hidden rounded-3xl p-5">
+
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl">
+                        👥
+                    </span>
+
+                    <h2 className="text-lg font-bold leading-tight text-card-foreground">
+                        Follow them if you know them
+                    </h2>
+                </div>
+
+                <Link
+                    href="/explore"
+                    className="shrink-0 text-sm font-medium text-primary hover:underline"
+                >
+                    View all
+                </Link>
+            </div>
+
+            {suggestedProfiles.length ===
+                0 ? (
+                <p className="mt-6 text-sm text-muted-foreground">
+                    You're all caught up.
+                </p>
+            ) : (
+                <div className="mt-5 space-y-4">
+
+                    {suggestedProfiles.map(
+                        (profile) => (
+                            <div
+                                key={
+                                    profile.id
+                                }
+                                className="flex items-center gap-3"
+                            >
+
+                                {/* USER */}
+
+                                <Link
+                                    href={`/profile/${profile.id}`}
+                                    className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-1 transition hover:bg-accent"
+                                >
+                                    {/* AVATAR */}
+
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-bold text-muted-foreground">
+                                        {profile.avatar_url ? (
+                                            <img
+                                                src={
+                                                    profile.avatar_url
+                                                }
+                                                alt="Avatar"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            profile.full_name
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            profile.username
+                                                ?.charAt(
+                                                    0
+                                                )
+                                                .toUpperCase() ||
+                                            "U"
+                                        )}
+                                    </div>
+
+                                    {/* NAME */}
+
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-semibold text-card-foreground">
+                                            {profile.full_name ||
+                                                "User"}
                                         </p>
 
-                                    </Link>
-                                );
-                            }
-                        )}
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            @
+                                            {profile.username ||
+                                                "username"}
+                                        </p>
+                                    </div>
+                                </Link>
 
-                    </div>
-                )}
+                                {/* FOLLOW */}
 
-            </div>
-
-            {/* WHO TO FOLLOW */}
-
-            <div className="mt-6 rounded-2xl border border-white/10 p-5">
-
-                <h2 className="text-lg font-bold">
-                    Follow them if you know them
-                </h2>
-
-                {suggestedProfiles.length ===
-                    0 ? (
-                    <p className="mt-5 text-sm text-white/40">
-                        You're all caught up.
-                    </p>
-                ) : (
-                    <div className="mt-5 space-y-5">
-
-                        {suggestedProfiles.map(
-                            (profile) => (
-                                <div
-                                    key={
+                                <FollowButton
+                                    targetUserId={
                                         profile.id
                                     }
-                                    className="flex items-center justify-between gap-3"
-                                >
+                                />
 
-                                    {/* USER */}
+                            </div>
+                        )
+                    )}
 
-                                    <Link
-                                        href={`/profile/${profile.id}`}
-                                        className="flex min-w-0 items-center gap-3"
-                                    >
+                </div>
+            )}
 
-                                        {/* AVATAR */}
+        </section>
 
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold">
-
-                                            {profile.avatar_url ? (
-                                                <img
-                                                    src={
-                                                        profile.avatar_url
-                                                    }
-                                                    alt="Avatar"
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                profile.full_name
-                                                    ?.charAt(
-                                                        0
-                                                    )
-                                                    .toUpperCase() ||
-                                                profile.username
-                                                    ?.charAt(
-                                                        0
-                                                    )
-                                                    .toUpperCase() ||
-                                                "U"
-                                            )}
-
-                                        </div>
-
-                                        {/* NAME */}
-
-                                        <div className="min-w-0">
-
-                                            <p className="truncate font-semibold">
-                                                {profile.full_name ||
-                                                    "User"}
-                                            </p>
-
-                                            <p className="truncate text-sm text-white/40">
-                                                @
-                                                {profile.username ||
-                                                    "username"}
-                                            </p>
-
-                                        </div>
-
-                                    </Link>
-
-                                    {/* FOLLOW BUTTON */}
-
-                                    <FollowButton
-                                        targetUserId={
-                                            profile.id
-                                        }
-                                    />
-
-                                </div>
-                            )
-                        )}
-
-                    </div>
-                )}
-
-            </div>
-
-        </aside>
+    </aside>
     );
 };
 

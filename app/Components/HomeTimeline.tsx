@@ -1237,8 +1237,7 @@ const HomeTimeline = () => {
                             key={
                                 meme.id
                             }
-                            className="border-b border-white/10 bg-white/[0.01] px-4 py-5 transition duration-200 hover:bg-red-950/[0.08] sm:px-6"
-                        >
+                            className="border-b border-border bg-card/40 px-4 py-5 transition duration-200 hover:bg-accent/40 sm:px-6">
 
                             {/* HEADER */}
 
@@ -1296,7 +1295,7 @@ const HomeTimeline = () => {
 
                                         </div>
 
-                                        <p className="text-xs text-white/30">
+                                        <p className="min-w-0 flex-1 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary">
                                             {new Date(
                                                 meme.created_at
                                             ).toLocaleString()}
@@ -1327,7 +1326,7 @@ const HomeTimeline = () => {
                             {/* TEXT */}
 
                             {meme.content && (
-                                <p className="mt-4 whitespace-pre-wrap text-[15px] leading-6">
+                                <p className="mt-4 whitespace-pre-wrap text-[15px] leading-7 text-card-foreground">
                                     {meme.content}
                                 </p>
                             )}
@@ -1335,11 +1334,9 @@ const HomeTimeline = () => {
                             {/* IMAGE */}
 
                             {meme.image_url && (
-                                <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                                <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-muted">
                                     <img
-                                        src={
-                                            meme.image_url
-                                        }
+                                        src={meme.image_url}
                                         alt="Meme"
                                         className="max-h-[600px] w-full rounded-xl object-contain sm:rounded-2xl"
                                     />
@@ -1348,7 +1345,7 @@ const HomeTimeline = () => {
 
                             {/* ACTIONS */}
 
-                            <div className="mt-4 flex items-center gap-2 text-sm sm:gap-8">
+                            <div className="mt-4 flex items-center justify-between text-sm sm:justify-start sm:gap-8">
 
                                 {/* LIKE */}
 
@@ -1358,10 +1355,9 @@ const HomeTimeline = () => {
                                         handleLike(
                                             meme.id
                                         )
-                                    }
-                                    className={`rounded-full px-3 py-2 transition ${likeInfo?.liked
-                                        ? "bg-red-500/10 text-red-400"
-                                        : "text-white/40 hover:bg-white/5 hover:text-red-400"
+                                    } className={`rounded-full px-3 py-2 transition ${likeInfo?.liked
+                                        ? "bg-red-500/10 text-red-500"
+                                        : "text-muted-foreground hover:bg-accent hover:text-red-500"
                                         }`}
                                 >
                                     {likeInfo?.liked
@@ -1387,10 +1383,9 @@ const HomeTimeline = () => {
                                             ""
                                         );
                                     }}
-                                    className={`rounded-full px-3 py-2 transition ${openCommentBox ===
-                                        meme.id
-                                        ? "bg-white/10 text-white"
-                                        : "text-white/40 hover:bg-white/5 hover:text-white"
+                                    className={`rounded-full px-3 py-2 transition ${openCommentBox === meme.id
+                                        ? "bg-primary/15 text-primary"
+                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                         }`}
                                 >
                                     💬{" "}
@@ -1408,11 +1403,9 @@ const HomeTimeline = () => {
                                             meme.id
                                         )
                                     }
-                                    className={`rounded-full px-3 py-2 transition ${saved[
-                                        meme.id
-                                    ]?.saved
-                                        ? "bg-yellow-400/10 text-yellow-400"
-                                        : "text-white/40 hover:bg-white/5 hover:text-yellow-400"
+                                    className={`rounded-full px-3 py-2 transition ${saved[meme.id]?.saved
+                                        ? "bg-primary/15 text-primary"
+                                        : "text-muted-foreground hover:bg-accent hover:text-primary"
                                         }`}
                                 >
                                     {saved[
