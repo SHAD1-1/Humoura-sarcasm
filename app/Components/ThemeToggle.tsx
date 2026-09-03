@@ -65,19 +65,19 @@ export default function ThemeToggle() {
             </span>
 
             <span className="hidden sm:inline">
-                {theme === "dark" ? "Dark" : "Light"}
+                {theme === "dark" ? "Insomnia" : "Bored"}
             </span>
 
             <span
                 className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${theme === "dark"
-                        ? "bg-muted"
-                        : "bg-primary"
+                    ? "bg-muted"
+                    : "bg-primary"
                     }`}
             >
                 <span
                     className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${theme === "dark"
-                            ? "translate-x-0"
-                            : "translate-x-4"
+                        ? "translate-x-0"
+                        : "translate-x-4"
                         }`}
                 />
             </span>
