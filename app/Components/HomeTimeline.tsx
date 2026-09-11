@@ -90,22 +90,7 @@ const HomeTimeline = () => {
 
             const {
                 data: { user },
-                error: userError,
             } = await supabase.auth.getUser();
-
-            if (userError) {
-                console.error(
-                    "USER ERROR:",
-                    userError
-                );
-
-                setError(
-                    userError.message
-                );
-
-                setLoading(false);
-                return;
-            }
 
             if (user) {
                 setCurrentUserId(user.id);
@@ -192,13 +177,6 @@ const HomeTimeline = () => {
                     "PROFILE ERROR:",
                     profileError
                 );
-
-                setError(
-                    profileError.message
-                );
-
-                setLoading(false);
-                return;
             }
 
             // ========================================
