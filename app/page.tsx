@@ -1,4 +1,3 @@
-import AuthScreen from "./Components/AuthScreen";
 import HomeTimeline from "./Components/HomeTimeline";
 import LeftSidebar from "./Components/LeftSidebar";
 import RightSidebar from "./Components/RightSidebar";
@@ -26,6 +25,7 @@ function Home() {
                     <header className="sticky top-0 z-40 border-b border-border bg-background/85 px-4 py-4 backdrop-blur-xl sm:px-6">
 
                         <div className="flex items-center justify-between">
+
                             <div>
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
                                     Humoura
@@ -40,12 +40,6 @@ function Home() {
                                 <ThemeToggle />
                             </div>
 
-                            <a
-                                href="/create"
-                                className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 sm:hidden"
-                            >
-                                + Post
-                            </a>
                         </div>
 
                     </header>
@@ -124,6 +118,40 @@ function Home() {
     );
 }
 
+function GuestHome() {
+    return (
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+
+            <main className="mx-auto min-h-screen w-full max-w-2xl border-x border-border">
+
+                <header className="sticky top-0 z-40 border-b border-border bg-background/85 px-4 py-4 backdrop-blur-xl sm:px-6">
+
+                    <div className="flex items-center justify-between">
+
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary">
+                                Humoura
+                            </p>
+
+                            <h1 className="mt-1 text-xl font-bold tracking-tight">
+                                Home
+                            </h1>
+                        </div>
+
+                        <ThemeToggle />
+
+                    </div>
+
+                </header>
+
+                <HomeTimeline />
+
+            </main>
+
+        </div>
+    );
+}
+
 export default async function Page() {
     const supabase = await createClient();
 
@@ -132,7 +160,7 @@ export default async function Page() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-        return <AuthScreen />;
+        return <GuestHome />;
     }
 
     return <Home />;
