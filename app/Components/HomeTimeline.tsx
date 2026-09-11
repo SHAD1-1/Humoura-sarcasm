@@ -217,14 +217,10 @@ const HomeTimeline = () => {
                     return {
                         id: meme.id,
                         content: meme.content,
-                        image_url:
-                            meme.image_url,
-                        author_id:
-                            meme.author_id,
-                        created_at:
-                            meme.created_at,
-                        is_public:
-                            meme.is_public,
+                        image_url: meme.image_url,
+                        author_id: meme.author_id,
+                        created_at: meme.created_at,
+                        is_public: meme.is_public,
                         profile,
                     };
                 });
