@@ -1,28 +1,14 @@
 import Link from "next/link";
-import {
-  MdOutlineExplore,
-} from "react-icons/md";
-import {
-  TbHomeStats,
-} from "react-icons/tb";
-import {
-  RiNotificationSnoozeFill,
-} from "react-icons/ri";
-import {
-  LuMessageSquareHeart,
-} from "react-icons/lu";
-import {
-  BsBookmarkHeartFill,
-} from "react-icons/bs";
-import {
-  RiUser5Line,
-} from "react-icons/ri";
-import {
-  GiHappySkull,
-} from "react-icons/gi";
+
+import { MdOutlineExplore } from "react-icons/md";
+import { TbHomeStats } from "react-icons/tb";
+import { RiNotificationSnoozeFill } from "react-icons/ri";
+import { LuMessageSquareHeart } from "react-icons/lu";
+import { BsBookmarkHeartFill } from "react-icons/bs";
+import { RiUser5Line } from "react-icons/ri";
+import { GiHappySkull } from "react-icons/gi";
 
 import { createClient } from "@/lib/supabase/server";
-
 
 const NAVIGATION_ITEMS = [
   {
@@ -60,9 +46,17 @@ const NAVIGATION_ITEMS = [
 const LeftSidebar = async () => {
   const supabase = await createClient();
 
+  // ==========================================
+  // CURRENT USER
+  // ==========================================
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // ==========================================
+  // PROFILE
+  // ==========================================
 
   let profile: {
     username: string | null;
@@ -71,10 +65,7 @@ const LeftSidebar = async () => {
   } | null = null;
 
   if (user) {
-    const {
-      data: profileData,
-      error: profileError,
-    } = await supabase
+    const { data: profileData } = await supabase
       .from("profiles")
       .select(
         "username, full_name, avatar_url"
@@ -82,15 +73,12 @@ const LeftSidebar = async () => {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (profileError) {
-      console.error(
-        "LEFT SIDEBAR PROFILE ERROR:",
-        profileError
-      );
-    }
-
     profile = profileData;
   }
+
+  // ==========================================
+  // UNREAD NOTIFICATIONS
+  // ==========================================
 
   let unreadNotifications = 0;
 
@@ -128,8 +116,8 @@ const LeftSidebar = async () => {
     <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-border bg-background/85 px-4 py-5 backdrop-blur-xl transition-colors duration-300">
 
       {/* ========================================
-                LOGO
-            ======================================== */}
+          LOGO
+      ======================================== */}
 
       <Link
         href="/"
@@ -151,69 +139,53 @@ const LeftSidebar = async () => {
       </Link>
 
       {/* ========================================
-                NAVIGATION
-            ======================================== */}
+          NAVIGATION
+      ======================================== */}
 
       <nav className="flex flex-col gap-1.5">
-        {NAVIGATION_ITEMS.map(
-          (item) => {
-            const Icon =
-              item.icon;
 
-            const isActive =
-              item.title ===
-              "Home";
+        {NAVIGATION_ITEMS.map((item) => {
+          const Icon = item.icon;
 
-            return (
-              <Link
-                key={
-                  item.title
-                }
-                href={
-                  item.href
-                }
-                className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-medium transition-all duration-200 ${isActive
+          const isActive =
+            item.title === "Home";
+
+          return (
+            <Link
+              key={item.title}
+              href={item.href}
+              className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-medium transition-all duration-200 ${isActive
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/15"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
-              >
-                <Icon
-                  className={`text-[22px] transition-transform duration-200 ${isActive
-                    ? ""
-                    : "group-hover:scale-110"
-                    }`}
-                />
+                }`}
+            >
+              <Icon className="text-[22px] transition-transform duration-200 group-hover:scale-110" />
 
-                <span>
-                  {
-                    item.title
-                  }
-                </span>
+              <span>
+                {item.title}
+              </span>
 
-                {item.title ===
-                  "Notifications" &&
-                  unreadNotifications >
-                  0 && (
-                    <span
-                      className={`ml-auto flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive
+              {item.title ===
+                "Notifications" &&
+                unreadNotifications > 0 && (
+                  <span
+                    className={`ml-auto flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isActive
                         ? "bg-black/15 text-primary-foreground"
                         : "bg-primary text-primary-foreground"
-                        }`}
-                    >
-                      {
-                        unreadNotifications
-                      }
-                    </span>
-                  )}
-              </Link>
-            );
-          }
-        )}
+                      }`}
+                  >
+                    {unreadNotifications}
+                  </span>
+                )}
+            </Link>
+          );
+        })}
+
       </nav>
 
       {/* ========================================
-                CREATE SARcasm
-            ======================================== */}
+          CREATE SARcasm
+      ======================================== */}
 
       <Link
         href="/create"
@@ -222,20 +194,19 @@ const LeftSidebar = async () => {
         <span className="absolute inset-0 bg-gradient-to-r from-yellow-300 via-primary to-amber-400" />
 
         <span className="relative flex items-center justify-center gap-2 rounded-full bg-background px-5 py-3 font-bold text-foreground transition duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+
           <span className="text-lg transition-transform duration-300 group-hover:rotate-12">
             +
           </span>
 
           Create Sarcasm
+
         </span>
       </Link>
 
       {/* ========================================
-         
-
-      {/* ========================================
-                USER
-            ======================================== */}
+          USER
+      ======================================== */}
 
       <Link
         href="/profile"
@@ -249,22 +220,16 @@ const LeftSidebar = async () => {
 
             {profile?.avatar_url ? (
               <img
-                src={
-                  profile.avatar_url
-                }
+                src={profile.avatar_url}
                 alt="Profile"
                 className="h-full w-full object-cover"
               />
             ) : (
               profile?.full_name
-                ?.charAt(
-                  0
-                )
+                ?.charAt(0)
                 .toUpperCase() ||
               profile?.username
-                ?.charAt(
-                  0
-                )
+                ?.charAt(0)
                 .toUpperCase() ||
               "U"
             )}
@@ -274,9 +239,9 @@ const LeftSidebar = async () => {
           {/* USER INFO */}
 
           <div className="min-w-0">
+
             <p className="truncate text-sm font-semibold text-foreground">
-              {profile?.full_name ||
-                "User"}
+              {profile?.full_name || "User"}
             </p>
 
             <p className="truncate text-xs text-muted-foreground">
@@ -284,6 +249,7 @@ const LeftSidebar = async () => {
                 ? `@${profile.username}`
                 : "@username"}
             </p>
+
           </div>
 
           <span className="ml-auto text-muted-foreground transition group-hover:text-foreground">

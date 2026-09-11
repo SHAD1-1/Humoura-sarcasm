@@ -12,10 +12,15 @@ export default function CreateSarcasmPage() {
     const [content, setContent] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
+
+    const [isPublic, setIsPublic] = useState(true);
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function handleFileChange(
+        e: React.ChangeEvent<HTMLInputElement>
+    ) {
         const selectedFile = e.target.files?.[0];
 
         if (!selectedFile) return;
@@ -35,18 +40,21 @@ export default function CreateSarcasmPage() {
         setMessage("");
     }
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(
+        e: React.FormEvent<HTMLFormElement>
+    ) {
         e.preventDefault();
 
         if (!content.trim() && !file) {
-            setMessage("Please write something or upload an image.");
+            setMessage(
+                "Please write something or upload an image."
+            );
             return;
         }
 
         setLoading(true);
         setMessage("");
 
-        // Get currently logged-in user
         const {
             data: { user },
             error: userError,
@@ -60,26 +68,40 @@ export default function CreateSarcasmPage() {
 
         let imageUrl: string | null = null;
 
-        // Upload image if one was selected
+        // ==============================
+        // IMAGE UPLOAD
+        // ==============================
+
         if (file) {
-            const fileExtension = file.name.split(".").pop();
-            const fileName = `${crypto.randomUUID()}.${fileExtension}`;
+            const fileExtension =
+                file.name.split(".").pop();
 
-            // Store images inside the user's own folder
-            const filePath = `${user.id}/${fileName}`;
+            const fileName =
+                `${crypto.randomUUID()}.${fileExtension}`;
 
-            const { error: uploadError } = await supabase.storage
+            const filePath =
+                `${user.id}/${fileName}`;
+
+            const {
+                error: uploadError,
+            } = await supabase.storage
                 .from("memes")
                 .upload(filePath, file);
 
             if (uploadError) {
-                console.error("Image upload error:", uploadError);
-                setMessage(uploadError.message);
+                console.error(
+                    "Image upload error:",
+                    uploadError
+                );
+
+                setMessage(
+                    uploadError.message
+                );
+
                 setLoading(false);
                 return;
             }
 
-            // Get public URL
             const {
                 data: { publicUrl },
             } = supabase.storage
@@ -89,124 +111,246 @@ export default function CreateSarcasmPage() {
             imageUrl = publicUrl;
         }
 
-        // Create the meme
-        const { error: insertError } = await supabase
+        // ==============================
+        // CREATE MEME
+        // ==============================
+
+        const {
+            error: insertError,
+        } = await supabase
             .from("memes")
             .insert({
                 author_id: user.id,
                 content: content.trim(),
                 image_url: imageUrl,
+                is_public: isPublic,
             });
 
         if (insertError) {
-            console.error("Meme insert error:", insertError);
-            setMessage(insertError.message);
+            console.error(
+                "Meme insert error:",
+                insertError
+            );
+
+            setMessage(
+                insertError.message
+            );
+
             setLoading(false);
             return;
         }
 
-        // Go back home
         router.push("/");
         router.refresh();
     }
 
     return (
-        <main className="min-h-screen bg-black text-white">
-            <div className="mx-auto w-full max-w-2xl border-x border-white/10">
+        <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
 
-                {/* Header */}
-                <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-4 py-4 backdrop-blur-xl sm:px-6">
+            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-border">
+
+                {/* HEADER */}
+
+                <header className="sticky top-0 z-20 border-b border-border bg-background/85 px-4 py-4 backdrop-blur-xl sm:px-6">
+
                     <div className="flex items-center gap-4">
+
                         <Link
                             href="/"
-                            className="text-white/50 transition hover:text-white"
+                            className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
                         >
                             ← Home
                         </Link>
 
-                        <h1 className="text-xl font-bold">
-                            Create Sarcasm
-                        </h1>
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
+                                Humoura
+                            </p>
+
+                            <h1 className="text-xl font-bold">
+                                Create Sarcasm
+                            </h1>
+                        </div>
+
                     </div>
+
                 </header>
 
-                {/* Form */}
+                {/* FORM */}
+
                 <form
                     onSubmit={handleSubmit}
-                    className="p-6"
+                    className="p-5 sm:p-6"
                 >
 
-                    {/* Text */}
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Wash away your procrastination by uploading sarcasms..."
-                        maxLength={500}
-                        rows={6}
-                        className="w-full resize-none rounded-xl border border-white/10 bg-white/5 p-4 text-white outline-none placeholder:text-white/40 focus:border-white/30"
-                    />
+                    <div className="rounded-3xl border border-border bg-card p-5 shadow-xl sm:p-6">
 
-                    {/* Character count */}
-                    <div className="mt-2 text-right text-sm text-white/40">
-                        {content.length}/500
-                    </div>
+                        {/* TEXT */}
 
-                    {/* Image Upload */}
-                    <label className="mt-5 block cursor-pointer rounded-xl border border-dashed border-white/20 bg-white/5 p-6 text-center transition hover:bg-white/10">
-
-                        <div className="text-lg font-semibold">
-                            🖼️ Upload pictures
-                        </div>
-
-                        <p className="mt-2 text-sm text-white/40">
-                            JPG, PNG, JPEG or WEBP • Max 5MB
-                        </p>
-
-                        <input
-                            type="file"
-                            accept="image/png,image/jpeg,image/jpg,image/webp"
-                            onChange={handleFileChange}
-                            className="hidden"
+                        <textarea
+                            value={content}
+                            onChange={(e) =>
+                                setContent(
+                                    e.target.value
+                                )
+                            }
+                            placeholder="Wash away your procrastination by uploading sarcasms..."
+                            maxLength={500}
+                            rows={6}
+                            className="w-full resize-none bg-transparent text-[16px] leading-7 text-foreground outline-none placeholder:text-muted-foreground"
                         />
 
-                    </label>
+                        {/* CHARACTER COUNT */}
 
-                    {/* Image Preview */}
-                    {preview && (
-                        <div className="relative mt-5 overflow-hidden rounded-xl border border-white/10">
-                            <img
-                                src={preview}
-                                alt="Meme preview"
-                                className="max-h-[600px] w-full object-contain"
-                            />
+                        <div className="mt-2 text-right text-xs text-muted-foreground">
+                            {content.length}/500
                         </div>
-                    )}
 
-                    {/* Error message */}
-                    {message && (
-                        <p className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
-                            {message}
-                        </p>
-                    )}
+                        {/* IMAGE UPLOAD */}
 
-                    {/* Bottom section */}
-                    <div className="mt-5 flex items-center justify-between">
+                        <label className="mt-5 block cursor-pointer rounded-2xl border border-dashed border-border bg-muted/40 p-6 text-center transition hover:bg-accent">
 
-                        <span className="text-sm text-white/40">
-                            {file ? file.name : "No image selected"}
-                        </span>
+                            <div className="text-lg font-semibold">
+                                🖼️ Upload picture
+                            </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading || (!content.trim() && !file)}
-                            className="rounded-full bg-white px-6 py-2 font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                            {loading ? "Posting..." : "Post"}
-                        </button>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                JPG, PNG, JPEG or WEBP • Max 5MB
+                            </p>
+
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/jpg,image/webp"
+                                onChange={
+                                    handleFileChange
+                                }
+                                className="hidden"
+                            />
+
+                        </label>
+
+                        {/* PREVIEW */}
+
+                        {preview && (
+                            <div className="relative mt-5 overflow-hidden rounded-2xl border border-border bg-muted">
+                                <img
+                                    src={preview}
+                                    alt="Meme preview"
+                                    className="max-h-[600px] w-full object-contain"
+                                />
+                            </div>
+                        )}
+
+                        {/* VISIBILITY */}
+
+                        <div className="mt-5 rounded-2xl border border-border bg-muted/40 p-4">
+
+                            <p className="text-sm font-bold">
+                                Who can see this sarcasm?
+                            </p>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+
+                                {/* PUBLIC */}
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPublic(
+                                            true
+                                        )
+                                    }
+                                    className={`rounded-2xl border px-4 py-4 text-left transition ${isPublic
+                                            ? "border-primary bg-primary/10"
+                                            : "border-border bg-card hover:bg-accent"
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">
+                                            🌎
+                                        </span>
+
+                                        <span className="font-semibold">
+                                            Public
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                        Anyone can see this post.
+                                    </p>
+                                </button>
+
+                                {/* PRIVATE */}
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setIsPublic(
+                                            false
+                                        )
+                                    }
+                                    className={`rounded-2xl border px-4 py-4 text-left transition ${!isPublic
+                                            ? "border-primary bg-primary/10"
+                                            : "border-border bg-card hover:bg-accent"
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">
+                                            🔒
+                                        </span>
+
+                                        <span className="font-semibold">
+                                            Private
+                                        </span>
+                                    </div>
+
+                                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                        Only allowed people can see it.
+                                    </p>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        {/* ERROR */}
+
+                        {message && (
+                            <p className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500 dark:text-red-400">
+                                {message}
+                            </p>
+                        )}
+
+                        {/* BOTTOM */}
+
+                        <div className="mt-5 flex items-center justify-between gap-4">
+
+                            <span className="min-w-0 truncate text-sm text-muted-foreground">
+                                {file
+                                    ? file.name
+                                    : "No image selected"}
+                            </span>
+
+                            <button
+                                type="submit"
+                                disabled={
+                                    loading ||
+                                    (!content.trim() &&
+                                        !file)
+                                }
+                                className="shrink-0 rounded-full bg-primary px-6 py-2.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                {loading
+                                    ? "Posting..."
+                                    : "Post Sarcasm"}
+                            </button>
+
+                        </div>
 
                     </div>
 
                 </form>
+
             </div>
         </main>
     );
