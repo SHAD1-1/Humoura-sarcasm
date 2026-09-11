@@ -104,7 +104,6 @@ const HomeTimeline = () => {
             // ========================================
             // GET MEMES
             // ========================================
-
             const {
                 data: memeData,
                 error: memeError,
@@ -118,7 +117,6 @@ const HomeTimeline = () => {
                     ascending: false,
                 })
                 .limit(25);
-
             if (memeError) {
                 console.error(
                     "MEME ERROR:",
