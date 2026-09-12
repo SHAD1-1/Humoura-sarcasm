@@ -107,16 +107,28 @@ const HomeTimeline = () => {
             const {
                 data: memeData,
                 error: memeError,
-            } = await supabase
-                .from("memes")
-                .select(
-                    "id, content, image_url, author_id, created_at, is_public"
-                )
-                .eq("is_public", true)
-                .order("created_at", {
-                    ascending: false,
-                })
-                .limit(25);
+            } = user
+                    ? await supabase
+                        .from("memes")
+                        .select(
+                            "id, content, image_url, author_id, created_at, is_public"
+                        )
+                        .or(
+                            `is_public.eq.true,author_id.eq.${user.id}`
+                        )
+                        .order("created_at", {
+                            ascending: false,
+                        })
+                    : await supabase
+                        .from("memes")
+                        .select(
+                            "id, content, image_url, author_id, created_at, is_public"
+                        )
+                        .eq("is_public", true)
+                        .order("created_at", {
+                            ascending: false,
+                        })
+                        .limit(25);
             if (memeError) {
                 console.error(
                     "MEME ERROR:",
