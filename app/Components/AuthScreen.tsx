@@ -5,25 +5,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "./ThemeToggle";
 
-type Mode = "login" | "signup";
-
 export default function AuthScreen() {
     const supabase = createClient();
 
-    const [mode, setMode] = useState<Mode>("login");
     const [email, setEmail] = useState("");
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
 
-    function switchMode(nextMode: Mode) {
-        setMode(nextMode);
-        setError("");
-        setMessage("");
-    }
-
-    async function handleSubmit(
+    async function handleLogin(
         e: React.FormEvent<HTMLFormElement>
     ) {
         e.preventDefault();
@@ -44,9 +34,8 @@ export default function AuthScreen() {
                 email: trimmedEmail,
                 options: {
                     emailRedirectTo:
-                        `${window.location.origin}/auth/callback`,
-                    shouldCreateUser:
-                        mode === "signup",
+                        "https://humoura.com/auth/callback",
+                    shouldCreateUser: true,
                 },
             });
 
@@ -57,32 +46,10 @@ export default function AuthScreen() {
         }
 
         setMessage(
-            mode === "signup"
-                ? "Check your email to finish creating your Humoura account."
-                : "Check your email. We sent you a magic link to log in."
+            "Check your email. Click the magic link to continue to Humoura."
         );
 
         setLoading(false);
-    }
-
-    async function handleGoogleLogin() {
-        setLoading(true);
-        setError("");
-        setMessage("");
-
-        const { error } =
-            await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: {
-                    redirectTo:
-                        `${window.location.origin}/auth/callback`,
-                },
-            });
-
-        if (error) {
-            setError(error.message);
-            setLoading(false);
-        }
     }
 
     return (
@@ -135,58 +102,26 @@ export default function AuthScreen() {
                         </p>
 
                         <h2 className="mt-4 text-5xl font-black leading-[1.05] tracking-tight">
-                            {mode === "login"
-                                ? "Welcome back..."
-                                : "Create an account..."}
+                            One email.
+                            <br />
+                            That's it.
                         </h2>
 
                         <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
-                            Same people.
+                            No passwords.
                             <br />
-                            Different sense
+                            No complicated signup.
                             <br />
-                            of humour.
+                            Just get in and enjoy the sarcasm.
                         </p>
 
                     </div>
 
-                    {/* Card */}
+                    {/* Login card */}
                     <section className="w-full">
 
                         <div className="rounded-[2rem] border border-border bg-card/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
 
-                            {/* Tabs */}
-                            <div className="mb-8 flex rounded-full border border-border bg-muted p-1">
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        switchMode("login")
-                                    }
-                                    className={`flex-1 rounded-full py-3 text-sm font-bold transition ${mode === "login"
-                                        ? "bg-primary text-primary-foreground shadow-md"
-                                        : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                >
-                                    Log In
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        switchMode("signup")
-                                    }
-                                    className={`flex-1 rounded-full py-3 text-sm font-bold transition ${mode === "signup"
-                                        ? "bg-primary text-primary-foreground shadow-md"
-                                        : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                >
-                                    Sign Up
-                                </button>
-
-                            </div>
-
-                            {/* Heading */}
                             <div className="mb-8">
 
                                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">
@@ -194,49 +129,19 @@ export default function AuthScreen() {
                                 </p>
 
                                 <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-                                    {mode === "login"
-                                        ? "Welcome back, legend."
-                                        : "Join the Cult of Sarcasm."}
+                                    Welcome to Humoura.
                                 </h1>
 
                                 <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                                    {mode === "login"
-                                        ? "Enter your email and we'll send you a magic link."
-                                        : "No password needed. We'll email you a link to join."}
+                                    Enter your email and we'll send you a magic link.
+                                    New users can use the same button to join.
                                 </p>
 
                             </div>
 
-                            {/* Google */}
-                            <button
-                                type="button"
-                                onClick={handleGoogleLogin}
-                                disabled={loading}
-                                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 font-semibold text-card-foreground shadow-sm transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-background text-sm font-bold">
-                                    G
-                                </span>
-
-                                Continue with Google
-                            </button>
-
-                            {/* Divider */}
-                            <div className="my-6 flex items-center gap-3">
-
-                                <div className="h-px flex-1 bg-border" />
-
-                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                                    or
-                                </span>
-
-                                <div className="h-px flex-1 bg-border" />
-
-                            </div>
-
-                            {/* Form */}
+                            {/* Email */}
                             <form
-                                onSubmit={handleSubmit}
+                                onSubmit={handleLogin}
                                 className="space-y-5"
                             >
 
@@ -287,44 +192,15 @@ export default function AuthScreen() {
                                 >
                                     {loading
                                         ? "Sending..."
-                                        : mode === "login"
-                                            ? "Send Magic Link"
-                                            : "Create Account"}
+                                        : "Log in"}
                                 </button>
 
                             </form>
 
-                            <div className="mt-7 text-center text-sm text-muted-foreground">
-
-                                {mode === "login" ? (
-                                    <>
-                                        Don't have an account?
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                switchMode("signup")
-                                            }
-                                            className="ml-1 font-bold text-primary hover:underline"
-                                        >
-                                            Sign up
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        Already have an account?
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                switchMode("login")
-                                            }
-                                            className="ml-1 font-bold text-primary hover:underline"
-                                        >
-                                            Log in
-                                        </button>
-                                    </>
-                                )}
-
-                            </div>
+                            <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+                                New to Humoura? No separate signup is needed.
+                                Your account is created automatically the first time you use your email.
+                            </p>
 
                         </div>
 
@@ -336,85 +212,36 @@ export default function AuthScreen() {
                         <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-lg backdrop-blur-xl">
 
                             <h3 className="text-lg font-bold">
-                                👑 Top Memes We Rejected Today
+                                👀 Humoura rules
                             </h3>
 
-                            <div className="mt-5 grid grid-cols-3 gap-3">
-                                <div className="h-20 rounded-2xl bg-muted" />
-                                <div className="h-20 rounded-2xl bg-muted" />
-                                <div className="h-20 rounded-2xl bg-muted" />
+                            <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                                <p>• No passwords</p>
+                                <p>• No separate signup</p>
+                                <p>• One email for everything</p>
+                                <p>• More sarcasm, less effort</p>
                             </div>
-
-                            <p className="mt-3 text-sm text-muted-foreground">
-                                Rejected for &quot;too unfunny&quot;
-                            </p>
 
                         </div>
 
                         <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-lg backdrop-blur-xl">
 
                             <h3 className="text-lg font-bold">
-                                👥 Top Contributors
+                                😂 Welcome, stranger.
                             </h3>
 
-                            <div className="mt-5 space-y-4">
-
-                                {[
-                                    ["H", "user1", "Meme Lord"],
-                                    ["S", "SarcasticSteve", "Professional Cynic"],
-                                    ["P", "Ironydiot", "Chaos Specialist"],
-                                ].map(
-                                    ([avatar, username, role]) => (
-                                        <div
-                                            key={username}
-                                            className="flex items-center gap-3"
-                                        >
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground">
-                                                {avatar}
-                                            </div>
-
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold">
-                                                    {username}
-                                                </p>
-
-                                                <p className="text-xs text-muted-foreground">
-                                                    {role}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )
-                                )}
-
-                            </div>
-
-                        </div>
-
-                        <div className="flex items-center gap-3 rounded-3xl border border-border bg-card/90 p-4 shadow-lg backdrop-blur-xl">
-
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-2xl">
-                                👤
-                            </div>
-
-                            <div className="flex-1">
-                                <p className="font-semibold">
-                                    Guest User
-                                </p>
-
-                                <p className="text-xs text-muted-foreground">
-                                    Looking around (skeptically)
-                                </p>
-                            </div>
-
-                            <span className="text-lg text-muted-foreground">
-                                →
-                            </span>
+                            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                                Stay for the memes.
+                                Follow people you actually like.
+                                Pretend the comments section is healthy.
+                            </p>
 
                         </div>
 
                     </div>
 
                 </div>
+
             </div>
 
         </main>
