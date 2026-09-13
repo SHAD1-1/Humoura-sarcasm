@@ -11,16 +11,12 @@ function Home() {
             <div className="mx-auto flex min-h-screen max-w-7xl">
 
                 {/* LEFT SIDEBAR */}
-
                 <aside className="hidden lg:block">
                     <LeftSidebar />
                 </aside>
 
                 {/* MAIN */}
-
                 <main className="min-h-screen w-full border-x border-border lg:ml-64 lg:max-w-2xl">
-
-                    {/* HEADER */}
 
                     <header className="sticky top-0 z-40 border-b border-border bg-background/85 px-4 py-4 backdrop-blur-xl sm:px-6">
 
@@ -49,13 +45,11 @@ function Home() {
                 </main>
 
                 {/* RIGHT SIDEBAR */}
-
                 <RightSidebar />
 
             </div>
 
             {/* MOBILE NAVIGATION */}
-
             <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 px-2 pb-[env(safe-area-inset-bottom)] pt-2 backdrop-blur-xl lg:hidden">
 
                 <div className="mx-auto flex max-w-md items-center justify-around">
@@ -64,9 +58,7 @@ function Home() {
                         href="/"
                         className="flex min-w-[60px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-foreground"
                     >
-                        <span className="text-lg">
-                            ⌂
-                        </span>
+                        <span className="text-lg">⌂</span>
                         Home
                     </a>
 
@@ -74,9 +66,7 @@ function Home() {
                         href="/explore"
                         className="flex min-w-[60px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition hover:text-foreground"
                     >
-                        <span className="text-lg">
-                            ⌕
-                        </span>
+                        <span className="text-lg">⌕</span>
                         Explore
                     </a>
 
@@ -84,9 +74,7 @@ function Home() {
                         href="/notifications"
                         className="flex min-w-[60px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition hover:text-foreground"
                     >
-                        <span className="text-lg">
-                            ◉
-                        </span>
+                        <span className="text-lg">◉</span>
                         Alerts
                     </a>
 
@@ -94,9 +82,7 @@ function Home() {
                         href="/messages"
                         className="flex min-w-[60px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition hover:text-foreground"
                     >
-                        <span className="text-lg">
-                            ✉
-                        </span>
+                        <span className="text-lg">✉</span>
                         Messages
                     </a>
 
@@ -104,9 +90,7 @@ function Home() {
                         href="/profile"
                         className="flex min-w-[60px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium text-muted-foreground transition hover:text-foreground"
                     >
-                        <span className="text-lg">
-                            ○
-                        </span>
+                        <span className="text-lg">○</span>
                         Profile
                     </a>
 
@@ -155,11 +139,12 @@ function GuestHome() {
 export default async function Page() {
     const supabase = await createClient();
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+    const { data } =
+        await supabase.auth.getClaims();
 
-    if (!user) {
+    const userId = data?.claims?.sub;
+
+    if (!userId) {
         return <GuestHome />;
     }
 
