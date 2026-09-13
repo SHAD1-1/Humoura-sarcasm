@@ -135,16 +135,12 @@ function GuestHome() {
         </div>
     );
 }
-
 export default async function Page() {
     const supabase = await createClient();
 
-    const { data } =
-        await supabase.auth.getClaims();
+    const { data } = await supabase.auth.getClaims();
 
-    const userId = data?.claims?.sub;
-
-    if (!userId) {
+    if (!data?.claims?.sub) {
         return <GuestHome />;
     }
 

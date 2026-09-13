@@ -53,18 +53,18 @@ export async function updateSession(
     }
   );
 
-  await supabase.auth.getClaims();
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
 
-export async function proxy(
+export async function middleware(
   request: NextRequest
 ) {
   return updateSession(request);
 }
 
-export default proxy;
+export default middleware;
 
 export const config = {
   matcher: [
