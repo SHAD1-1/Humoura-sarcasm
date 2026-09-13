@@ -9,9 +9,14 @@ export default function AuthScreen() {
     const supabase = createClient();
 
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
+
+    const [showForgotPassword, setShowForgotPassword] =
+        useState(false);
 
     async function handleLogin(
         e: React.FormEvent<HTMLFormElement>
@@ -20,8 +25,81 @@ export default function AuthScreen() {
 
         const trimmedEmail = email.trim();
 
+        setLoading(true);
+        setError("");
+        setMessage("");
+
+        const { error: loginError } =
+            await supabase.auth.signInWithPassword({
+                email: trimmedEmail,
+                password,
+            });
+
+        if (loginError) {
+            setError(loginError.message);
+            setLoading(false);
+            return;
+        }
+
+        window.location.href = "/";
+    }
+
+    async function handleSignup(
+        e: React.FormEvent<HTMLFormElement>
+    ) {
+        e.preventDefault();
+
+        const trimmedEmail = email.trim();
+
+        setLoading(true);
+        setError("");
+        setMessage("");
+
+        const { data, error: signupError } =
+            await supabase.auth.signUp({
+                email: trimmedEmail,
+                password,
+                options: {
+                    emailRedirectTo:
+                        "https://humoura.com/auth/callback",
+                },
+            });
+
+        if (signupError) {
+            setError(signupError.message);
+            setLoading(false);
+            return;
+        }
+
+        if (!data.user) {
+            setError(
+                "We couldn't create your account. Please try again."
+            );
+            setLoading(false);
+            return;
+        }
+
+        if (data.session) {
+            window.location.href = "/";
+            return;
+        }
+
+        setMessage(
+            "Account created. Check your email to confirm your account."
+        );
+
+        setLoading(false);
+    }
+
+    async function handleForgotPassword(
+        e: React.FormEvent<HTMLFormElement>
+    ) {
+        e.preventDefault();
+
+        const trimmedEmail = email.trim();
+
         if (!trimmedEmail) {
-            setError("Please enter your email address.");
+            setError("Enter your email address first.");
             return;
         }
 
@@ -29,24 +107,23 @@ export default function AuthScreen() {
         setError("");
         setMessage("");
 
-        const { error: otpError } =
-            await supabase.auth.signInWithOtp({
-                email: trimmedEmail,
-                options: {
-                    emailRedirectTo:
-                        "https://humoura.com/auth/callback",
-                    shouldCreateUser: true,
-                },
-            });
+        const { error: resetError } =
+            await supabase.auth.resetPasswordForEmail(
+                trimmedEmail,
+                {
+                    redirectTo:
+                        "https://humoura.com/update-password",
+                }
+            );
 
-        if (otpError) {
-            setError(otpError.message);
+        if (resetError) {
+            setError(resetError.message);
             setLoading(false);
             return;
         }
 
         setMessage(
-            "Check your email. Click the magic link to continue to Humoura."
+            "Password reset link sent. Check your email."
         );
 
         setLoading(false);
@@ -102,22 +179,18 @@ export default function AuthScreen() {
                         </p>
 
                         <h2 className="mt-4 text-5xl font-black leading-[1.05] tracking-tight">
-                            One email.
-                            <br />
-                            That's it.
+                            Welcome back.
                         </h2>
 
                         <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
-                            No passwords.
-                            <br />
-                            No complicated signup.
-                            <br />
-                            Just get in and enjoy the sarcasm.
+                            Login with your email and password.
+                            Forgot your password? We'll help you
+                            get back in.
                         </p>
 
                     </div>
 
-                    {/* Login card */}
+                    {/* Auth card */}
                     <section className="w-full">
 
                         <div className="rounded-[2rem] border border-border bg-card/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
@@ -129,78 +202,225 @@ export default function AuthScreen() {
                                 </p>
 
                                 <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-                                    Welcome to Humoura.
+                                    {showForgotPassword
+                                        ? "Reset your password."
+                                        : "Welcome back, legend."}
                                 </h1>
 
                                 <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                                    Enter your email and we'll send you a magic link.
-                                    New users can use the same button to join.
+                                    {showForgotPassword
+                                        ? "Enter your email and we'll send you a secure reset link."
+                                        : "Use your email and password to enter Humoura."}
                                 </p>
 
                             </div>
 
-                            {/* Email */}
-                            <form
-                                onSubmit={handleLogin}
-                                className="space-y-5"
-                            >
+                            {!showForgotPassword ? (
+                                <>
 
-                                <div>
-
-                                    <label
-                                        htmlFor="auth-email"
-                                        className="mb-2 block text-sm font-semibold"
+                                    {/* Login form */}
+                                    <form
+                                        onSubmit={handleLogin}
+                                        className="space-y-5"
                                     >
-                                        Email
-                                    </label>
 
-                                    <input
-                                        id="auth-email"
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) =>
-                                            setEmail(e.target.value)
-                                        }
-                                        placeholder="you@example.com"
-                                        required
-                                        autoComplete="email"
-                                        className="w-full rounded-full border border-border bg-background px-5 py-3.5 text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10"
-                                    />
+                                        <div>
 
-                                </div>
+                                            <label
+                                                htmlFor="auth-email"
+                                                className="mb-2 block text-sm font-semibold"
+                                            >
+                                                Email
+                                            </label>
 
-                                {error && (
-                                    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-                                        <p className="text-sm leading-6 text-red-500 dark:text-red-400">
-                                            {error}
-                                        </p>
+                                            <input
+                                                id="auth-email"
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) =>
+                                                    setEmail(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="you@example.com"
+                                                required
+                                                autoComplete="email"
+                                                className="w-full rounded-full border border-border bg-background px-5 py-3.5 text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                            />
+
+                                        </div>
+
+                                        <div>
+
+                                            <label
+                                                htmlFor="auth-password"
+                                                className="mb-2 block text-sm font-semibold"
+                                            >
+                                                Password
+                                            </label>
+
+                                            <input
+                                                id="auth-password"
+                                                type="password"
+                                                value={password}
+                                                onChange={(e) =>
+                                                    setPassword(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="••••••••"
+                                                required
+                                                autoComplete="current-password"
+                                                className="w-full rounded-full border border-border bg-background px-5 py-3.5 text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                            />
+
+                                        </div>
+
+                                        {error && (
+                                            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                                                <p className="text-sm leading-6 text-red-500 dark:text-red-400">
+                                                    {error}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {message && (
+                                            <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
+                                                <p className="text-sm leading-6 text-green-600 dark:text-green-400">
+                                                    {message}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full rounded-full bg-primary px-5 py-3.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {loading
+                                                ? "Logging in..."
+                                                : "Log in"}
+                                        </button>
+
+                                    </form>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowForgotPassword(
+                                                true
+                                            );
+                                            setError("");
+                                            setMessage("");
+                                        }}
+                                        className="mt-5 w-full text-center text-sm font-semibold text-primary hover:underline"
+                                    >
+                                        Forgot your password?
+                                    </button>
+
+                                    <div className="my-7 flex items-center gap-3">
+                                        <div className="h-px flex-1 bg-border" />
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                                            New here?
+                                        </span>
+                                        <div className="h-px flex-1 bg-border" />
                                     </div>
-                                )}
 
-                                {message && (
-                                    <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
-                                        <p className="text-sm leading-6 text-green-600 dark:text-green-400">
-                                            {message}
-                                        </p>
-                                    </div>
-                                )}
+                                    {/* Signup */}
+                                    <form
+                                        onSubmit={handleSignup}
+                                        className="space-y-5"
+                                    >
+                                        <button
+                                            type="submit"
+                                            disabled={
+                                                loading ||
+                                                !email.trim() ||
+                                                !password
+                                            }
+                                            className="w-full rounded-full border border-border bg-background px-5 py-3.5 font-bold text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Create account
+                                        </button>
+                                    </form>
 
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full rounded-full bg-primary px-5 py-3.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-[1.01] hover:shadow-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                </>
+                            ) : (
+                                <form
+                                    onSubmit={
+                                        handleForgotPassword
+                                    }
+                                    className="space-y-5"
                                 >
-                                    {loading
-                                        ? "Sending..."
-                                        : "Log in"}
-                                </button>
 
-                            </form>
+                                    <div>
 
-                            <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
-                                New to Humoura? No separate signup is needed.
-                                Your account is created automatically the first time you use your email.
-                            </p>
+                                        <label
+                                            htmlFor="reset-email"
+                                            className="mb-2 block text-sm font-semibold"
+                                        >
+                                            Email
+                                        </label>
+
+                                        <input
+                                            id="reset-email"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) =>
+                                                setEmail(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="you@example.com"
+                                            required
+                                            autoComplete="email"
+                                            className="w-full rounded-full border border-border bg-background px-5 py-3.5 text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                                        />
+
+                                    </div>
+
+                                    {error && (
+                                        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+                                            <p className="text-sm text-red-500 dark:text-red-400">
+                                                {error}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {message && (
+                                        <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                {message}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full rounded-full bg-primary px-5 py-3.5 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {loading
+                                            ? "Sending..."
+                                            : "Send reset link"}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowForgotPassword(
+                                                false
+                                            );
+                                            setError("");
+                                            setMessage("");
+                                        }}
+                                        className="w-full text-center text-sm font-semibold text-muted-foreground hover:text-foreground"
+                                    >
+                                        ← Back to login
+                                    </button>
+
+                                </form>
+                            )}
 
                         </div>
 
@@ -212,14 +432,14 @@ export default function AuthScreen() {
                         <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-lg backdrop-blur-xl">
 
                             <h3 className="text-lg font-bold">
-                                👀 Humoura rules
+                                🔐 Simple authentication
                             </h3>
 
                             <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                                <p>• No passwords</p>
-                                <p>• No separate signup</p>
-                                <p>• One email for everything</p>
-                                <p>• More sarcasm, less effort</p>
+                                <p>• Email + password</p>
+                                <p>• Confirm email once</p>
+                                <p>• Forgot password? Get a reset link</p>
+                                <p>• Stay logged in across visits</p>
                             </div>
 
                         </div>
@@ -227,13 +447,11 @@ export default function AuthScreen() {
                         <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-lg backdrop-blur-xl">
 
                             <h3 className="text-lg font-bold">
-                                😂 Welcome, stranger.
+                                😂 Now go make something terrible.
                             </h3>
 
                             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                                Stay for the memes.
-                                Follow people you actually like.
-                                Pretend the comments section is healthy.
+                                That's what Humoura is for.
                             </p>
 
                         </div>
