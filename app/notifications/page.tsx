@@ -1,4 +1,12 @@
 import Link from "next/link";
+import {
+    BsArrowLeft,
+    BsBell,
+    BsHeartFill,
+    BsChatHeart,
+    BsPersonPlusFill,
+    BsAt,
+} from "react-icons/bs";
 import { createClient } from "@/lib/supabase/server";
 
 type Profile = {
@@ -22,36 +30,39 @@ type Notification = {
 export default async function NotificationsPage() {
     const supabase = await createClient();
 
-    // ========================================
-    // GET CURRENT USER
-    // ========================================
-
     const {
         data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold">
-                        You are not logged in
+            <main className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+                <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-xl">
+
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-primary">
+                        <BsBell className="text-2xl" />
+                    </div>
+
+                    <h1 className="mt-5 text-2xl font-black">
+                        Login to see notifications
                     </h1>
+
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Your likes, replies, mentions and
+                        future follow requests will appear here.
+                    </p>
 
                     <Link
                         href="/login"
-                        className="mt-4 inline-block rounded-full bg-white px-5 py-2 font-semibold text-black"
+                        className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90"
                     >
                         Log in
                     </Link>
+
                 </div>
             </main>
         );
     }
-
-    // ========================================
-    // GET NOTIFICATIONS
-    // ========================================
 
     const {
         data: notificationData,
@@ -68,20 +79,17 @@ export default async function NotificationsPage() {
 
     if (notificationError) {
         return (
-            <main className="min-h-screen bg-black px-6 py-10 text-red-400">
+            <main className="min-h-screen bg-background px-6 py-10 text-red-500">
                 {notificationError.message}
             </main>
         );
     }
 
-    // ========================================
-    // GET ACTOR PROFILES
-    // ========================================
-
     const actorIds = [
         ...new Set(
             (notificationData || []).map(
-                (notification) => notification.actor_id
+                (notification) =>
+                    notification.actor_id
             )
         ),
     ];
@@ -101,7 +109,7 @@ export default async function NotificationsPage() {
 
         if (profileError) {
             return (
-                <main className="min-h-screen bg-black px-6 py-10 text-red-400">
+                <main className="min-h-screen bg-background px-6 py-10 text-red-500">
                     {profileError.message}
                 </main>
             );
@@ -109,10 +117,6 @@ export default async function NotificationsPage() {
 
         actorProfiles = profiles || [];
     }
-
-    // ========================================
-    // COMBINE NOTIFICATIONS + PROFILES
-    // ========================================
 
     const notifications: Notification[] = (
         notificationData || []
@@ -124,153 +128,222 @@ export default async function NotificationsPage() {
         meme_id: notification.meme_id,
         reply_id: notification.reply_id,
         actor_id: notification.actor_id,
-
         actor:
             actorProfiles.find(
                 (profile) =>
-                    profile.id === notification.actor_id
+                    profile.id ===
+                    notification.actor_id
             ) || null,
     }));
 
-    // ========================================
-    // PAGE
-    // ========================================
+    function notificationIcon(
+        type: Notification["type"]
+    ) {
+        if (type === "like") {
+            return (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+                    <BsHeartFill />
+                </div>
+            );
+        }
+
+        if (type === "reply") {
+            return (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <BsChatHeart />
+                </div>
+            );
+        }
+
+        if (type === "follow") {
+            return (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
+                    <BsPersonPlusFill />
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10 text-purple-500">
+                <BsAt />
+            </div>
+        );
+    }
+
+    function messageFor(
+        type: Notification["type"]
+    ) {
+        if (type === "like") {
+            return "liked your post.";
+        }
+
+        if (type === "reply") {
+            return "replied to your post.";
+        }
+
+        if (type === "follow") {
+            return "followed you.";
+        }
+
+        return "mentioned you.";
+    }
+
+    function avatar(actor: Profile | null) {
+        if (actor?.avatar_url) {
+            return (
+                <img
+                    src={actor.avatar_url}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                />
+            );
+        }
+
+        return (
+            actor?.full_name
+                ?.charAt(0)
+                .toUpperCase() ||
+            actor?.username
+                ?.charAt(0)
+                .toUpperCase() ||
+            "U"
+        );
+    }
 
     return (
-        <main className="min-h-screen bg-black text-white">
-            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-white/10">
+        <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
+            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-border">
 
-                {/* HEADER */}
+                <header className="sticky top-0 z-40 border-b border-border bg-background/85 px-5 py-4 backdrop-blur-xl">
 
-                <header className="sticky top-0 z-10 border-b border-white/10 bg-black/80 px-6 py-4 backdrop-blur-md">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+
                         <Link
                             href="/"
-                            className="text-white/50 hover:text-white"
+                            className="rounded-full p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
                         >
-                            ← Home
+                            <BsArrowLeft />
                         </Link>
 
-                        <h1 className="text-xl font-bold">
-                            Notifications
-                        </h1>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <BsBell />
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
+                                HUMOURA
+                            </p>
+
+                            <h1 className="text-xl font-bold">
+                                Notifications
+                            </h1>
+                        </div>
+
                     </div>
+
                 </header>
 
-                {/* EMPTY STATE */}
-
                 {notifications.length === 0 ? (
-                    <div className="px-6 py-16 text-center">
-                        <h2 className="text-xl font-semibold">
-                            No notifications
+                    <div className="px-6 py-20 text-center">
+
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted text-primary">
+                            <BsBell className="text-2xl" />
+                        </div>
+
+                        <h2 className="mt-5 text-xl font-black">
+                            Nothing yet
                         </h2>
 
-                        <p className="mt-2 text-white/50">
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
                             You're all caught up.
                         </p>
+
                     </div>
                 ) : (
                     <div>
+
                         {notifications.map(
                             (notification) => {
                                 const actor =
                                     notification.actor;
 
-                                let message =
-                                    "interacted with your post.";
+                                const content = (
+                                    <div
+                                        className={`flex gap-4 px-5 py-5 transition hover:bg-accent/40 ${!notification.read
+                                                ? "bg-primary/[0.04]"
+                                                : ""
+                                            }`}
+                                    >
 
-                                if (
-                                    notification.type ===
-                                    "like"
-                                ) {
-                                    message =
-                                        "liked your post.";
-                                }
-
-                                if (
-                                    notification.type ===
-                                    "reply"
-                                ) {
-                                    message =
-                                        "replied to your post.";
-                                }
-
-                                if (
-                                    notification.type ===
-                                    "follow"
-                                ) {
-                                    message =
-                                        "followed you.";
-                                }
-
-                                if (
-                                    notification.type ===
-                                    "mention"
-                                ) {
-                                    message =
-                                        "mentioned you.";
-                                }
-
-                                return (<Link
-                                    key={notification.id}
-                                    href={
-                                        notification.meme_id
-                                            ? `/notifications/${notification.id}`
-                                            : "/notifications"
-                                    }
-                                    className={`flex gap-3 border-b border-white/10 px-6 py-5 transition hover:bg-white/[0.03] ${!notification.read
-                                        ? "bg-white/[0.03]"
-                                        : ""
-                                        }`}
-                                >
-                                    {/* AVATAR */}
-
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 font-bold">
-                                        {actor?.avatar_url ? (
-                                            <img
-                                                src={actor.avatar_url}
-                                                alt="Avatar"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            actor?.full_name
-                                                ?.charAt(0)
-                                                .toUpperCase() ||
-                                            actor?.username
-                                                ?.charAt(0)
-                                                .toUpperCase() ||
-                                            "U"
+                                        {notificationIcon(
+                                            notification.type
                                         )}
+
+                                        <div className="flex h-full w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-bold text-muted-foreground ring-1 ring-border">
+                                            {avatar(actor)}
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+
+                                            <p className="text-sm leading-6">
+                                                <span className="font-bold">
+                                                    {actor?.full_name ||
+                                                        "Someone"}
+                                                </span>{" "}
+                                                <span className="text-muted-foreground">
+                                                    {messageFor(
+                                                        notification.type
+                                                    )}
+                                                </span>
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                {new Date(
+                                                    notification.created_at
+                                                ).toLocaleString()}
+                                            </p>
+
+                                        </div>
+
+                                        {!notification.read && (
+                                            <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                                        )}
+
                                     </div>
+                                );
 
-                                    {/* CONTENT */}
+                                if (
+                                    notification.meme_id
+                                ) {
+                                    return (
+                                        <Link
+                                            key={
+                                                notification.id
+                                            }
+                                            href={`/notifications/${notification.id}`}
+                                            className="block border-b border-border"
+                                        >
+                                            {content}
+                                        </Link>
+                                    );
+                                }
 
-                                    <div className="min-w-0">
-                                        <p className="text-sm leading-6">
-                                            <span className="font-semibold">
-                                                {actor?.full_name || "Someone"}
-                                            </span>{" "}
-                                            <span className="text-white/70">
-                                                {message}
-                                            </span>
-                                        </p>
-
-                                        <p className="mt-1 text-xs text-white/30">
-                                            {new Date(
-                                                notification.created_at
-                                            ).toLocaleString()}
-                                        </p>
+                                return (
+                                    <div
+                                        key={
+                                            notification.id
+                                        }
+                                        className="border-b border-border"
+                                    >
+                                        {content}
                                     </div>
-
-                                    {!notification.read && (
-                                        <div className="ml-auto mt-2 h-2 w-2 shrink-0 rounded-full bg-red-500" />
-                                    )}
-                                </Link>
                                 );
                             }
                         )}
+
                     </div>
                 )}
+
             </div>
         </main>
     );
