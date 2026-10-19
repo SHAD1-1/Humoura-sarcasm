@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+/app/admin/page.tsx
+/app/admin/*    
+
 
 # production
 /build

@@ -42,6 +42,8 @@ export type Reply = {
 
 const HomeTimeline = () => {
     const supabase = createClient();
+    const ADMIN_USER_ID = "cc399bed-44dd-4b4b-a340-b01866a60f15";
+
 
     const [memes, setMemes] = useState<Meme[]>([]);
 
@@ -808,150 +810,108 @@ const HomeTimeline = () => {
     // ==========================================
     // DELETE POST
     // ==========================================
-
-    async function handleDeletePost(
-        memeId: string
-    ) {
+    async function handleDeletePost(memeId: string) {
         const {
             data: { user },
-        } =
-            await supabase.auth.getUser();
+        } = await supabase.auth.getUser();
 
         if (!user) return;
 
-        const meme =
-            memes.find(
-                (item) =>
-                    item.id ===
-                    memeId
-            );
+        const meme = memes.find(
+            (item) => item.id === memeId
+        );
 
         if (!meme) return;
 
-        if (
-            meme.author_id !==
-            user.id
-        ) {
+        const isAdmin =
+            user.id === ADMIN_USER_ID;
+
+        const isOwner =
+            meme.author_id === user.id;
+
+        if (!isOwner && !isAdmin) {
             console.error(
-                "DELETE POST BLOCKED: not the author"
+                "DELETE POST BLOCKED: not owner or admin"
             );
             return;
         }
 
-        const confirmed =
-            window.confirm(
-                "Delete this post? This cannot be undone."
-            );
+        const confirmed = window.confirm(
+            isAdmin && !isOwner
+                ? "Delete this post as admin? This cannot be undone."
+                : "Delete this post? This cannot be undone."
+        );
 
         if (!confirmed) return;
 
         const {
+            data: deletedMeme,
             error,
         } = await supabase
             .from("memes")
             .delete()
-            .eq(
-                "id",
-                memeId
-            )
-            .eq(
-                "author_id",
-                user.id
-            );
+            .eq("id", memeId)
+            .select("id")
+            .maybeSingle();
 
         if (error) {
             console.error(
                 "DELETE POST ERROR:",
                 {
-                    message:
-                        error.message,
-                    details:
-                        error.details,
-                    hint:
-                        error.hint,
-                    code:
-                        error.code,
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code,
                 }
             );
 
             return;
         }
 
-        setMemes(
-            (previous) =>
-                previous.filter(
-                    (meme) =>
-                        meme.id !==
-                        memeId
-                )
-        );
-
-        setLikes(
-            (previous) => {
-                const next = {
-                    ...previous,
-                };
-
-                delete next[
-                    memeId
-                ];
-
-                return next;
-            }
-        );
-
-        setReplies(
-            (previous) => {
-                const next = {
-                    ...previous,
-                };
-
-                delete next[
-                    memeId
-                ];
-
-                return next;
-            }
-        );
-
-        setReplyCounts(
-            (previous) => {
-                const next = {
-                    ...previous,
-                };
-
-                delete next[
-                    memeId
-                ];
-
-                return next;
-            }
-        );
-
-        setSaved(
-            (previous) => {
-                const next = {
-                    ...previous,
-                };
-
-                delete next[
-                    memeId
-                ];
-
-                return next;
-            }
-        );
-
-        if (
-            openCommentBox ===
-            memeId
-        ) {
-            setOpenCommentBox(
-                null
+        if (!deletedMeme) {
+            console.error(
+                "DELETE POST FAILED: no row was deleted"
             );
+            return;
+        }
+
+        setMemes((previous) =>
+            previous.filter(
+                (meme) => meme.id !== memeId
+            )
+        );
+
+        setLikes((previous) => {
+            const next = { ...previous };
+            delete next[memeId];
+            return next;
+        });
+
+        setReplies((previous) => {
+            const next = { ...previous };
+            delete next[memeId];
+            return next;
+        });
+
+        setReplyCounts((previous) => {
+            const next = { ...previous };
+            delete next[memeId];
+            return next;
+        });
+
+        setSaved((previous) => {
+            const next = { ...previous };
+            delete next[memeId];
+            return next;
+        });
+
+        if (openCommentBox === memeId) {
+            setOpenCommentBox(null);
             setCommentText("");
         }
     }
+
+
 
     // ==========================================
     // ADD TOP-LEVEL COMMENT
@@ -1226,9 +1186,10 @@ const HomeTimeline = () => {
                         ] || [];
 
                     const isOwner =
-                        currentUserId ===
-                        meme.author_id;
+                        currentUserId === meme.author_id;
 
+                    const isAdmin =
+                        currentUserId === ADMIN_USER_ID;
                     return (
                         <article
                             key={
@@ -1303,8 +1264,7 @@ const HomeTimeline = () => {
                                 </Link>
 
                                 {/* OWNER DELETE */}
-
-                                {isOwner && (
+                                {(isOwner || isAdmin) && (
                                     <button
                                         type="button"
                                         onClick={() =>

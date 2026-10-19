@@ -8,22 +8,36 @@ export default function UpdatePasswordPage() {
     const supabase = createClient();
 
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] =
-        useState("");
-
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [ready, setReady] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
     useEffect(() => {
+        let mounted = true;
+
+        const initializeRecovery = async () => {
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
+
+            if (mounted && session) {
+                setReady(true);
+            }
+        };
+
+        initializeRecovery();
+
         const {
-            data: listener,
+            data: { subscription },
         } = supabase.auth.onAuthStateChange(
-            (event) => {
+            (event, session) => {
                 if (
-                    event === "PASSWORD_RECOVERY" ||
-                    event === "SIGNED_IN"
+                    (event === "PASSWORD_RECOVERY" ||
+                        event === "SIGNED_IN") &&
+                    session &&
+                    mounted
                 ) {
                     setReady(true);
                 }
@@ -31,7 +45,8 @@ export default function UpdatePasswordPage() {
         );
 
         return () => {
-            listener.subscription.unsubscribe();
+            mounted = false;
+            subscription.unsubscribe();
         };
     }, []);
 
@@ -43,9 +58,16 @@ export default function UpdatePasswordPage() {
         setError("");
         setSuccess("");
 
-        if (password.length < 6) {
+        if (!ready) {
             setError(
-                "Password must be at least 6 characters."
+                "Your password reset session is not ready. Please use the latest reset email."
+            );
+            return;
+        }
+
+        if (password.length < 8) {
+            setError(
+                "Use a password with at least 8 characters."
             );
             return;
         }
@@ -71,12 +93,14 @@ export default function UpdatePasswordPage() {
         }
 
         setSuccess(
-            "Password updated successfully."
+            "Password updated successfully. Redirecting to login..."
         );
 
-        setPassword("");
-        setConfirmPassword("");
-        setLoading(false);
+        await supabase.auth.signOut();
+
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 1200);
     }
 
     return (
@@ -91,6 +115,7 @@ export default function UpdatePasswordPage() {
                 </Link>
 
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+
                     <h1 className="text-2xl font-bold">
                         Set a new password
                     </h1>
@@ -105,56 +130,58 @@ export default function UpdatePasswordPage() {
                     >
                         <input
                             type="password"
-                            required
-                            minLength={6}
                             value={password}
                             onChange={(e) =>
                                 setPassword(e.target.value)
                             }
                             placeholder="New password"
                             autoComplete="new-password"
+                            required
+                            minLength={8}
                             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none placeholder:text-white/30 focus:border-white/30"
                         />
 
                         <input
                             type="password"
-                            required
-                            minLength={6}
                             value={confirmPassword}
                             onChange={(e) =>
-                                setConfirmPassword(
-                                    e.target.value
-                                )
+                                setConfirmPassword(e.target.value)
                             }
                             placeholder="Confirm new password"
                             autoComplete="new-password"
+                            required
+                            minLength={8}
                             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none placeholder:text-white/30 focus:border-white/30"
                         />
 
                         {error && (
-                            <p className="text-sm text-red-400">
+                            <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-400">
                                 {error}
                             </p>
                         )}
 
                         {success && (
-                            <p className="text-sm text-green-400">
+                            <p className="rounded-xl bg-green-500/10 p-3 text-sm text-green-400">
                                 {success}
                             </p>
                         )}
 
                         <button
                             type="submit"
-                            disabled={loading || !ready}
-                            className="w-full rounded-full bg-white py-3 font-semibold text-black disabled:opacity-50"
+                            disabled={
+                                loading ||
+                                !ready
+                            }
+                            className="w-full rounded-full bg-white py-3 font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {!ready
-                                ? "Opening secure reset..."
+                                ? "Checking reset link..."
                                 : loading
                                     ? "Updating..."
                                     : "Update password"}
                         </button>
                     </form>
+
                 </div>
             </div>
         </main>
