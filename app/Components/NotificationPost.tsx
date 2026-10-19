@@ -419,9 +419,10 @@ export default function NotificationPost({
 
                         <div className="min-w-0">
                             <p className="truncate text-sm font-semibold">
-                                {reply.profile
-                                    ?.full_name ||
-                                    "User"}
+                                {reply.profile?.full_name?.trim() ||
+                                    (reply.profile?.username
+                                        ? `@${reply.profile.username}`
+                                        : "User")}
                             </p>
 
                             <p className="truncate text-xs text-white/40">
@@ -472,9 +473,10 @@ export default function NotificationPost({
                                 <div className="mb-2 flex items-center justify-between">
                                     <span className="text-xs text-white/40">
                                         Replying to{" "}
-                                        {reply.profile
-                                            ?.full_name ||
-                                            "this user"}
+                                        {reply.profile?.full_name?.trim() ||
+                                            (reply.profile?.username
+                                                ? `@${reply.profile.username}`
+                                                : "this user")}
                                     </span>
 
                                     <button
@@ -574,8 +576,8 @@ export default function NotificationPost({
                     <div className="min-w-0">
 
                         <p className="truncate font-semibold">
-                            {author?.full_name ||
-                                "User"}
+                            {author?.full_name?.trim() ||
+                                (author?.username ? `@${author.username}` : "User")}
                         </p>
 
                         <p className="truncate text-sm text-white/40">
@@ -766,8 +768,10 @@ export default function NotificationPost({
 
                                 <p className="truncate font-semibold">
                                     {referencedReplyAuthor
-                                        ?.full_name ||
-                                        "User"}
+                                        ?.full_name?.trim() ||
+                                        (referencedReplyAuthor?.username
+                                            ? `@${referencedReplyAuthor.username}`
+                                            : "User")}
                                 </p>
 
                                 <p className="truncate text-xs text-white/40">
@@ -821,8 +825,10 @@ export default function NotificationPost({
                                         <span className="text-xs text-white/40">
                                             Replying to{" "}
                                             {referencedReplyAuthor
-                                                ?.full_name ||
-                                                "this user"}
+                                                ?.full_name?.trim() ||
+                                                (referencedReplyAuthor?.username
+                                                    ? `@${referencedReplyAuthor.username}`
+                                                    : "this user")}
                                         </span>
 
                                         <button
