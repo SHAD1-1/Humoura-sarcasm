@@ -10,10 +10,8 @@ function Home() {
 
             <div className="mx-auto flex min-h-screen max-w-7xl">
 
-                {/* LEFT SIDEBAR */}
-                <aside className="hidden lg:block">
-                    <LeftSidebar />
-                </aside>
+                {/* LEFT SIDEBAR (desktop) + mobile bottom nav */}
+                <LeftSidebar />
 
                 {/* MAIN */}
                 <main className="min-h-screen w-full border-x border-border lg:ml-64 lg:max-w-2xl">
