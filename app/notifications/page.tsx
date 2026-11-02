@@ -287,8 +287,8 @@ export default async function NotificationsPage() {
 
                                             <p className="text-sm leading-6">
                                                 <span className="font-bold">
-                                                    {actor?.full_name ||
-                                                        "Someone"}
+                                                    {actor?.full_name?.trim() ||
+                                                        (actor?.username ? `@${actor.username}` : "Someone")}
                                                 </span>{" "}
                                                 <span className="text-muted-foreground">
                                                     {messageFor(

@@ -109,7 +109,7 @@ export default function AuthScreen() {
         }
 
         if (data.session) {
-            window.location.href = "/";
+            window.location.href = "/profile/setup";
             return;
         }
 

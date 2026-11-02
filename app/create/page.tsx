@@ -242,7 +242,7 @@ export default function CreateSarcasmPage() {
 
     return (
         <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
-            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-border">
+            <div className="mx-auto min-h-screen w-full max-w-2xl border-x border-border pb-24 lg:pb-0">
 
                 <header className="sticky top-0 z-20 border-b border-border bg-background/85 px-4 py-4 backdrop-blur-xl sm:px-6">
                     <div className="flex items-center gap-4">
@@ -329,11 +329,10 @@ export default function CreateSarcasmPage() {
                                     onClick={() =>
                                         setIsPublic(true)
                                     }
-                                    className={`rounded-2xl border px-4 py-4 text-left transition ${
-                                        isPublic
+                                    className={`rounded-2xl border px-4 py-4 text-left transition ${isPublic
                                             ? "border-primary bg-primary/10"
                                             : "border-border bg-card hover:bg-accent"
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <span className="text-lg">
@@ -355,11 +354,10 @@ export default function CreateSarcasmPage() {
                                     onClick={() =>
                                         setIsPublic(false)
                                     }
-                                    className={`rounded-2xl border px-4 py-4 text-left transition ${
-                                        !isPublic
+                                    className={`rounded-2xl border px-4 py-4 text-left transition ${!isPublic
                                             ? "border-primary bg-primary/10"
                                             : "border-border bg-card hover:bg-accent"
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <span className="text-lg">

@@ -101,6 +101,7 @@ export default function ProfileSetupPage() {
                         placeholder="Shahab"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                        required
                         className="rounded-lg border border-white/10 bg-white/10 px-3 py-2 outline-none"
                     />
                 </div>
